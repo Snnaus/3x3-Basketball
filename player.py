@@ -434,6 +434,36 @@ class Player():
             return False
         else:
             return True
+            
+    #this method will take the player and the opponent to determine if the player successfully backsdown the defender; this is used while in post-up mode
+    def back_down_check(self, opponent):
+        check = random.randint(1, self.strength) - opponent.strength
+        if check > 0:
+            return True
+        else:
+            return False
+            
+    #this method will take the player and the defender to determine if the player uses speed in the post to beat his opponent, ala Hakeem; this is used while in post-up mode
+    def speed_post_check(self, opponent):
+        check = (self.post_skill + random.randint(1, self.speed)) - (opponent.post_def + random.randint(1, opponent.speed))
+        if check > 0:
+            return True
+        else:
+            return False
+            
+    #This method actually proceeds with the player backing down the opponent
+    def back_down(self, opponent, court, ball):
+        difference = [opponent.court_position[0] - self.court_position[0], opponent.court_position[1] - self.court_position[1]]
+        the_direction = ' '
+        for direction in directions:
+            if directions[direction] == difference:
+                the_direction = direction
+                
+        test_spot = [opponent.court_position[0] + directions[the_direction][0], opponent.court_position[1] + directions[the_direction][1]
+        
+        if court.spot_open(test_spot, ball) and self.back_down_check(opponent):
+            opponent.move(the_direction)
+            self.move(the_direction)
         
         
         
