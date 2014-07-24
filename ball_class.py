@@ -1,8 +1,6 @@
 import random, math
 from player import rebound_script
 
-dude
-
 class Ball:
     """This is the class to make a ball object for each game of the simulation"""
 
