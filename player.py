@@ -464,6 +464,42 @@ class Player():
         if court.spot_open(test_spot, ball) and self.back_down_check(opponent):
             opponent.move(the_direction)
             self.move(the_direction)
+            
+    #This method takes the players current position along with the defenders position and determines which directions key is correlated with back_down,
+    #spin right, spin left post moves
+    def post_possible(self, opponent):
+        if self.distance_between_players(opponent) < 2:
+            post_poss = {
+                'back': 0,
+                'right': 0,
+                'left': 0
+                }
+                
+            back_d = [opponent.court_position[0] - self.court_position[0], opponent.court_position[1] - opponent.court_position[1]]
+            for direction,code in iteritems(directions):
+                if code == back_d:
+                    post_poss['back'] = direction
+            
+            if back_d[0] == 0:
+                for direction,code in iteritems(directions):
+                    if code == [-1, back_d[1]]:
+                        post_poss['right'] = direction
+                    if code == [1, back_d[1]]:
+                        post_poss['left'] = direction
+            elif back_d[1] == 0:
+                for direction,code in iteritems(directions):
+                    if code == [back_d[0], -1]:
+                        post_poss['right'] = direction
+                    if code == [back_d[0], 1]:
+                        post_poss['left'] = direction
+            else:
+                for direction,code in iteritems(directions):
+                    if code == [back_d[0], 0]:
+                        post_poss['right'] = direction
+                    if code == [0, back_d[1]]:
+                        post_poss['left'] = direction
+                    
+            return post_poss
         
         
         
