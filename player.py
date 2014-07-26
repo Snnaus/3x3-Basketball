@@ -179,7 +179,7 @@ class Player():
                 shot_fate = random.randint(1,100)
                 if shot_fate <= 50 + layup_percent - true_modifier:
                     #this is a placeholder text
-                    
+                    print 'Layup made'
                 else:
                     #this is a placeholder text
                     ball.rebound(court)
@@ -461,7 +461,7 @@ class Player():
             if directions[direction] == difference:
                 the_direction = direction
                 
-        test_spot = [opponent.court_position[0] + directions[the_direction][0], opponent.court_position[1] + directions[the_direction][1]
+        test_spot = [opponent.court_position[0] + directions[the_direction][0], opponent.court_position[1] + directions[the_direction][1]]
         
         if court.spot_open(test_spot, ball) and self.back_down_check(opponent):
             opponent.move(the_direction)
