@@ -72,6 +72,8 @@ class Player():
     shot_blocked = False
     court_position = [0,0]
     destination = [0,0]
+    face_up = True
+    post_up = False
     
     #----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     
@@ -500,6 +502,25 @@ class Player():
                         post_poss['left'] = direction
                     
             return post_poss
+            
+    #This method is to switch the player from face_up mode to post_up mode, and vice versa
+    def switch_up(self):
+        self.face_up, self.post_up = self.post_up, self.face_up
+        
+    #This method is to take the player, opponent, and a post direction (back, left, right) and process this into a movement; with a return
+    #value on the speed post moves to determine mimicry.
+    def post_move(self, opponent, the_move, ball, court):
+        moves = self.post_possible(opponent)
+        speed_move = False
+        if the_move == 'back':
+            self.back_down(opponent, ball, court)
+        else:
+            self.destination[0] += directions[moves[the_move]][0]
+            self.destination[1] += directions[moves[the_move]][1]
+            self.move_to(ball, court)
+            speed_move = self.speed_post_check(opponent)
+        
+        return speed_move
         
         
         
