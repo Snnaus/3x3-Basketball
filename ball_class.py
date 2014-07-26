@@ -80,11 +80,13 @@ class Ball:
             self.court_position = dest
             #this gives the ball a similar path; this is to continue moving if no player picks up the ball 
             self.destination = self.bounce_destination(power/2, self.court_position)
-
-    def out_of_bounds_check(self):
-        if self.court_position[0] > 14 or self.court_position[1] > 11:
+    
+    #this method checks a specific spot on the court to determine if it is out of bounds; it defaults to the ball's position;
+    #It returns True if IT IS OUT OF BOUNDS.
+    def out_of_bounds_check(self, position):
+        if position[0] > 14 or position[1] > 11:
             return True
-        elif self.court_position[0] < 0 or self.court_position[1] < 0:
+        elif position[0] < 0 or position[1] < 0:
             return True
         else:
             return False

@@ -23,7 +23,7 @@ class Court:
         is_open = False
         the_spot = spot[0],spot[1]
         
-        if ball.out_of_bounds_check() == False:
+        if ball.out_of_bounds_check(spot) == False:
             if self.positions[the_spot] == 0 or self.positions[the_spot] == 'ball':
                 is_open = True
             

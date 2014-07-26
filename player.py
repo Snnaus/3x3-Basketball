@@ -371,7 +371,7 @@ class Player():
             x_unit = -1
 
         #this is to check if the ball is moving straight forward or backwards; i.e. no change in x
-        if check_array[0] > 0:
+        if check_array[0] != 0:
             slope = check_array[1]/abs(check_array[0])
             if slope > 1:
                 slope = 1
@@ -428,7 +428,7 @@ class Player():
         else:
             return False
             
-    #this method is used to determine if the offensive player is forced to pick up the ball from dribble after his couter part has jumped him; this if from
+    #this method is used to determine if the offensive player is forced to pick up the ball from dribble after his counter part has jumped him; this if from
     #the perspective of the offensive player
     def pick_up_dribble_check(self, opponent):
         check = self.strength - opponent.strength - (10 - random.randint(0, self.ball_handle))
@@ -439,7 +439,7 @@ class Player():
             
     #this method will take the player and the opponent to determine if the player successfully backsdown the defender; this is used while in post-up mode
     def back_down_check(self, opponent):
-        check = random.randint(1, self.strength) - opponent.strength
+        check = random.randint(1, self.strength) - random.randint(1, opponent.strength)
         if check > 0:
             return True
         else:
@@ -454,7 +454,7 @@ class Player():
             return False
             
     #This method actually proceeds with the player backing down the opponent
-    def back_down(self, opponent, court, ball):
+    def back_down(self, opponent, ball, court):
         difference = [opponent.court_position[0] - self.court_position[0], opponent.court_position[1] - self.court_position[1]]
         the_direction = ' '
         for direction in directions:
@@ -477,31 +477,33 @@ class Player():
                 'left': 0
                 }
                 
-            back_d = [opponent.court_position[0] - self.court_position[0], opponent.court_position[1] - opponent.court_position[1]]
-            for direction,code in iteritems(directions):
+            back_d = [opponent.court_position[0] - self.court_position[0], opponent.court_position[1] - self.court_position[1]]
+            for direction,code in directions.iteritems():
                 if code == back_d:
                     post_poss['back'] = direction
             
             if back_d[0] == 0:
-                for direction,code in iteritems(directions):
+                for direction,code in directions.iteritems():
                     if code == [-1, back_d[1]]:
                         post_poss['right'] = direction
                     if code == [1, back_d[1]]:
                         post_poss['left'] = direction
             elif back_d[1] == 0:
-                for direction,code in iteritems(directions):
+                for direction,code in directions.iteritems():
                     if code == [back_d[0], -1]:
                         post_poss['right'] = direction
                     if code == [back_d[0], 1]:
                         post_poss['left'] = direction
             else:
-                for direction,code in iteritems(directions):
+                for direction,code in directions.iteritems():
                     if code == [back_d[0], 0]:
                         post_poss['right'] = direction
                     if code == [0, back_d[1]]:
                         post_poss['left'] = direction
-                    
+            
             return post_poss
+        else:
+            return False
             
     #This method is to switch the player from face_up mode to post_up mode, and vice versa
     def switch_up(self):
@@ -511,16 +513,23 @@ class Player():
     #value on the speed post moves to determine mimicry.
     def post_move(self, opponent, the_move, ball, court):
         moves = self.post_possible(opponent)
-        speed_move = False
-        if the_move == 'back':
-            self.back_down(opponent, ball, court)
+        if moves != False:
+            speed_move = False
+            if the_move == 'back':
+                self.back_down(opponent, ball, court)
+                #this is for testing
+                return 'backed down'
+            else:
+                self.destination[0] = self.court_position[0] + directions[moves[the_move]][0]
+                self.destination[1] = self.court_position[1] + directions[moves[the_move]][1]
+                if court.spot_open(self.destination, ball):
+                    self.move_to(ball, court)
+                    speed_move = self.speed_post_check(opponent)
+                    return speed_move
+                else:
+                    return "spot not open"
         else:
-            self.destination[0] += directions[moves[the_move]][0]
-            self.destination[1] += directions[moves[the_move]][1]
-            self.move_to(ball, court)
-            speed_move = self.speed_post_check(opponent)
-        
-        return speed_move
+            print 'The players did not post-up.'
         
         
         
