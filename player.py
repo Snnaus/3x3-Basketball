@@ -114,11 +114,17 @@ class Player():
     #This is the function for the player to pass the ball to a team-mate
     #first a 'pass' check from the player with the ball, to check for a good pass
     #then a 'hand' check to see if the receiver catches the ball
-    def pass_ball(self, target, defender, ball):
+    def pass_ball(self, target, ball, court):
         fate_pass = random.randint(1,60)
         fate_catch = random.randint(1,60)
         self.has_ball = False
-        tipped = defender.tip_pass(self, target)
+        tippers = court.players_between(ball, target.court_position, self.court_position)
+        tipped = False
+        for k,v in tippers.iteritems():
+            tipped = court.players[v].tip_pass()
+            if tiped == True:
+                break
+        
         distance = self.distance_between_players(target)
         if tipped == False:
             ball.assitor = self.player_id
@@ -283,44 +289,18 @@ class Player():
     
     #this is a function to see if a player is in-between a player passing the ball
     #to another; if he is he attempts to tip the ball away
-    def tip_pass(self, passer, receiver):
-        x_distance = receiver.court_position[0] - passer.court_position[0]
-        y_distance = receiver.court_position[0] - passer.court_position[0]
-        slope = 1
-        x_unit = 1
-        if x_distance != 0:
-            slope = (receiver.court_position[1] - passer.court_position[1]) / abs(x_distance)
-            if x_distance < 0:
-                x_unit = -1
+    def tip_pass(self):
+        fate = random.randint(0,40)
+        if fate < self.hands:
+            if fate < self.hands/2:
+                self.has_ball = True
+            else:
+                #this is a placeholder
+                print 'The ball was tipped'
+                return True
         else:
-            x_unit = 0
-            x_distance = y_distance
-            if receiver.court_position[1] - passer.court_position[1] < 0:
-                slope = -1
+            return False
         
-        
-        
-        test_position = [0,0]
-        test_position[0] = passer.court_position[0]
-        test_position[1] = passer.court_position[1]
-        for x in range(1,abs(x_distance)+1):
-            #print 'debug'
-            test_position[0] += x_unit
-            test_position[1] += int(round(slope))
-            #print test_position
-            if test_position == self.court_position:
-                #print 'debug'
-                fate = random.randint(0,40)
-                if fate < self.hands:
-                    if fate < self.hands/2:
-                        self.has_ball = True
-                    else:
-                        #this is a placeholder
-                        print 'The ball was tipped'
-                    return True
-                else:
-                    return False
-        return False
                                         
     #This function if for the player to box out his counterpart from the rebound;
     #the player being boxed out cannot advance closer to the basket
