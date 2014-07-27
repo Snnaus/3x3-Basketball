@@ -36,7 +36,7 @@ class Court:
         in_out = {}
     
         x_distance = new_position[0] - start_position[0]
-        y_distance = new_position[0] - start_position[1]
+        y_distance = new_position[1] - start_position[1]
         slope = 1
         x_unit = 1
         if x_distance != 0:
@@ -48,8 +48,10 @@ class Court:
             x_distance = y_distance
             if new_position[1] - start_position[1] < 0:
                 slope = -1
-                
-        test_position = start_position
+        
+        test_position = [0,0]
+        test_position[0] = start_position[0]
+        test_position[1] = start_position[1]
         #print start_position, x_unit, slope
         player_count = 0
         for x in range(1,abs(x_distance)+1):

@@ -121,10 +121,12 @@ class Player():
         self.has_ball = False
         tippers = court.players_between(ball, target.court_position, self.court_position)
         tipped = False
+        defender = 0
         for k,v in tippers.iteritems():
             if self.team_id != court.players[v].team_id:
                 tipped = court.players[v].tip_pass()
-                if tiped == True:
+                if tipped == True:
+                    defender = court.players[v]
                     break
         
         distance = self.distance_between_players(target)
@@ -151,7 +153,7 @@ class Player():
                 #self.turnover += 1 #this is a counter to give the passer a turnover for the lost pass
                 print 'the defender has the ball'
             else:
-                distance -= defender.distance_between_players(passer)
+                distance -= defender.distance_between_players(self)
                 ball.bounce(distance, defender.court_position)
                 
     #This is a function for the player to shoot the ball. The basket is at [7,1]
@@ -296,7 +298,7 @@ class Player():
             if fate < self.hands/2:
                 self.has_ball = True
             else:
-                #this is a placeholder
+                #this is a placeholder for debugging puroposes
                 print 'The ball was tipped'
             return True
         else:
