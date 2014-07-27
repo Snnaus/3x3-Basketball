@@ -138,6 +138,8 @@ class Player():
                 ball.court_position[1] = target.court_position[1]
             elif fate_pass >= 60 - (10-self.passing):
                 #this is for a wayward pass, hence why the focal point is on the passer; this could cause some crazy passes like 15 blocks backwards
+                ball.destination[0], ball.destination[1] = self.court_position[0], self.court_position[1]
+                ball.court_position[0], ball.court_position[1] = self.court_position[0], self.court_position[1]
                 ball.bounce(distance*2,self.court_position)
             else:
                 if fate_catch < target.hands*2:
@@ -145,6 +147,8 @@ class Player():
                     ball.court_position[0] = target.court_position[0]
                     ball.court_position[1] = target.court_position[1]
                 else:
+                    ball.destination[0], ball.destination[1] = target.court_position[0], target.court_position[1]
+                    ball.court_position[0], ball.court_position[1] = target.court_position[0], target.court_position[1]
                     ball.bounce(distance,target.court_position)
         else:
             if defender.has_ball == True:
@@ -154,6 +158,8 @@ class Player():
                 print 'the defender has the ball'
             else:
                 distance -= defender.distance_between_players(self)
+                ball.destination[0], ball.destination[1] = defender.court_position[0], defender.court_position[1]
+                ball.court_position[0], ball.court_position[1] = defender.court_position[0], defender.court_position[1]
                 ball.bounce(distance, defender.court_position)
                 
     #This is a function for the player to shoot the ball. The basket is at [7,1]
