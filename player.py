@@ -297,7 +297,7 @@ class Player():
             else:
                 #this is a placeholder
                 print 'The ball was tipped'
-                return True
+            return True
         else:
             return False
         
