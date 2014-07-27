@@ -18,6 +18,7 @@ directions = {
 class Player():
     #This class is designed to give a player the functions needed to operate in the game
     player_id = 0
+    team_id = -1
     
     def __init__(self, id):
         self.player_id = id
@@ -121,9 +122,10 @@ class Player():
         tippers = court.players_between(ball, target.court_position, self.court_position)
         tipped = False
         for k,v in tippers.iteritems():
-            tipped = court.players[v].tip_pass()
-            if tiped == True:
-                break
+            if self.team_id != court.players[v].team_id:
+                tipped = court.players[v].tip_pass()
+                if tiped == True:
+                    break
         
         distance = self.distance_between_players(target)
         if tipped == False:
@@ -367,16 +369,15 @@ class Player():
         final_check = [0,0]
         final_check[0] = x_unit
         final_check[1] = int(slope)
-        for x in directions:
-            if final_check == directions[x]:
-                self.move(x)
-            
-        #court.update_player_pos(self)
+        if court.spot_open(final_check, ball) == True:
+            for x in directions:
+                if final_check == directions[x]:
+                    self.move(x)
+                
+            court.update_player_pos()
 
         if self.has_ball == False:
             self.pick_up_ball(ball)
-        """#right here I need to add a way to check if there is someone in the
-        destination spot; because obviously two people cannot occupy the same space"""
 
     def pick_up_ball(self, ball):
         pick_up = False
@@ -510,6 +511,12 @@ class Player():
                     return "spot not open"
         else:
             print 'The players did not post-up.'
+            
+    #this method is for the chasing of the ball
+    def chase_ball(self, ball, court):
+        self.destination[0] = ball.court_position[0]
+        self.destination[1] = ball.court_position[1]
+        self.move_to(ball, court)
         
         
         

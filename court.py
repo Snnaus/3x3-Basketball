@@ -24,7 +24,7 @@ class Court:
         the_spot = spot[0],spot[1]
         
         if ball.out_of_bounds_check(spot) == False:
-            if self.positions[the_spot] == 0 or self.positions[the_spot] == 'ball':
+            if self.positions[the_spot] == 0:
                 is_open = True
             
         return is_open
@@ -107,4 +107,25 @@ class Court:
         
         return the_order
         
+    #this method looks for the closest player to a loose ball from each team and then sets them to move towards the ball
+    def loose_ball_chase(self, ball):
+        team_a_chaser = 0
+        team_b_chaser = 0
+        for k,v in self.players.iteritems():
+            if team_a_chaser == 0:
+                team_a_chaser = v
+            elif team_b_chaser == 0:
+                team_b_chaser = v
+            else:
+                if team_a_chaser.distance_between_players(ball) < v.distance_between_players(ball) and team_a_chaser.team_id == v.team_id:
+                    team_a_chaser = v
+                elif team_b_chaser.distance_between_players(ball) < v.distance_between_players(ball) and team_b_chaser.team_id == v.team_id:
+                    team_b_chaser = v
+        
+        if team_a_chaser.speed > team_b_chaser.speed:
+            team_a_chaser.chase_ball(ball, self)
+            team_b_chaser.chase_ball(ball, self)
+        else:
+            team_b_chaser.chase_ball(ball, self)
+            team_a_chaser.chase_ball(ball, self)
             
