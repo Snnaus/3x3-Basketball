@@ -19,7 +19,7 @@ class Ball:
 
     #this is an attribute to determine who had the possession of the ball last; this is used to determine turnovers and assists respectively; The last touch is to determine which team gets the inbound ball
     #and to determine who gets a steal from a tip away; these take the player_id of the player
-    last_posession = 0
+    last_possession = 0
     last_touch = 0
     assistor = 0
     assistor_timer = 0 #this counts the seconds after passing the ball; if it exceeds 3 seconds the assister does not receive an assist
@@ -113,6 +113,24 @@ class Ball:
         rebounders = court.players_between(self, self.court_position, [7,1])
         
         if self.box_out_range() == True and len(rebounders) > 0:
-            #this is the external rebound function found in Player.py file
+            #this is the external rebound function found in player.py file
             rebound_script(rebounders, court.players)
+            
+    #this method switches the balls possession; 
+    #it will also adjust the steal/rebound/turnover stats of the respective players (currently not implemented 7/27/2014)
+    def poss_change(self, new_player, court):
+        if self.possession == False:
+            """if self.last_possession != 0 and self.rebound == False:
+                court.players[self.last_possession].turnover_stat += 1
+                if self.steal == True:
+                    court.players[self.last_touch].steal_stat += 1
+                    self.steal = False
+            elif self.rebound == True:
+                new_player.reb_stat += 1
+                self.rebound = False"""
+                
+            new_player.has_ball = True
+            self.possession = True
+                
+            
         

@@ -384,9 +384,9 @@ class Player():
             court.update_player_pos()
 
         if self.has_ball == False:
-            self.pick_up_ball(ball)
+            self.pick_up_ball(ball, court)
 
-    def pick_up_ball(self, ball):
+    def pick_up_ball(self, ball, court):
         pick_up = False
         if self.court_position == ball.court_position:
             pick_up = True
@@ -395,9 +395,8 @@ class Player():
                 if self.court_position[0] + directions[x][0] == ball.court_position[0] and self.court_position[1] + directions[x][1] == ball.court_position[1]:
                     pick_up = True
 
-        if pick_up == True and ball.possession == False:
-            self.has_ball = True
-            #this is where I would add an if statement to check if the ball is a 'rebound' or a 'steal' and adds it to this players stat array
+        if pick_up == True:
+            ball.poss_change(self, court)
             
     #This method takes the ball carrier's defender and runs his on_ball_d attribute against the ball carrier's ball_handle to determine if the
     #ball carrier will receive a 1 move advantage; This is from the perspective of the offensive player
