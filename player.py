@@ -233,8 +233,7 @@ class Player():
     #the ball carrier cannot shoot, if he can than it keeps the defender 75%
     #between the basket and the ball (towards the player, to get in his face);
     #it returns a "destination" for the defender to go to
-    def on_ball_destination(self, offense_player, shooter):
-        destination = [7,1]
+    def on_ball_destination(self, offense_player, shooter, destination=[7,1]):
         if shooter == True:
             x = 7 + round((offense_player.court_position[0] - 7)*0.75)
             y = 1 + round((offense_player.court_position[1] - 1)*0.75)
