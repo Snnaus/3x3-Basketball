@@ -268,8 +268,12 @@ class Player():
         
     #this is a function to determine the distance between two players; this is used
     #for things like hand-check and jump for there distance components
-    def distance_between_players(self, other_player):
-        return int(math.sqrt(((self.court_position[0]-other_player.court_position[0])**2)+((self.court_position[1]-other_player.court_position[1])**2)))
+    def distance_between_players(self, other_player, integer=True):
+        x = math.sqrt(((self.court_position[0]-other_player.court_position[0])**2)+((self.court_position[1]-other_player.court_position[1])**2))
+        if integer == True:
+            return int(x)
+        else:
+            return x
         
     #the players distance from basket
     def distance_from_basket(self):
@@ -376,7 +380,10 @@ class Player():
         final_check = [0,0]
         final_check[0] = x_unit
         final_check[1] = int(slope)
-        if court.spot_open(final_check, ball) == True:
+        des_check = [0,0]
+        des_check[0] = self.court_position[0]+final_check[0]
+        des_check[1] = self.court_position[1]+final_check[1]
+        if court.spot_open(des_check, ball) == True:
             for x in directions:
                 if final_check == directions[x]:
                     self.move(x)

@@ -118,10 +118,11 @@ class Court:
                 team_a_chaser = v
             elif team_b_chaser == 0 and v.team_id != team_a_chaser.team_id:
                 team_b_chaser = v
-            elif team_b_chaser != 0 and team_b_chaser != 0:
-                if team_a_chaser.distance_between_players(ball) > v.distance_between_players(ball) and team_a_chaser.team_id == v.team_id:
+            elif team_a_chaser != 0 and team_a_chaser.team_id == v.team_id:
+                if team_a_chaser.distance_between_players(ball, False) > v.distance_between_players(ball, False):
                     team_a_chaser = v
-                elif team_b_chaser.distance_between_players(ball) > v.distance_between_players(ball) and team_b_chaser.team_id == v.team_id:
+            elif team_b_chaser != 0 and team_b_chaser.team_id == v.team_id:
+                if team_b_chaser.distance_between_players(ball, False) > v.distance_between_players(ball, False):
                     team_b_chaser = v
         
         if team_a_chaser.speed > team_b_chaser.speed:
