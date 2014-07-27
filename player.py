@@ -395,7 +395,7 @@ class Player():
                 if self.court_position[0] + directions[x][0] == ball.court_position[0] and self.court_position[1] + directions[x][1] == ball.court_position[1]:
                     pick_up = True
 
-        if pick_up == True:
+        if pick_up == True and ball.possession == False:
             self.has_ball = True
             #this is where I would add an if statement to check if the ball is a 'rebound' or a 'steal' and adds it to this players stat array
             

@@ -116,12 +116,12 @@ class Court:
         for k,v in self.players.iteritems():
             if team_a_chaser == 0:
                 team_a_chaser = v
-            elif team_b_chaser == 0:
+            elif team_b_chaser == 0 and v.team_id != team_a_chaser.team_id:
                 team_b_chaser = v
-            else:
-                if team_a_chaser.distance_between_players(ball) < v.distance_between_players(ball) and team_a_chaser.team_id == v.team_id:
+            elif team_b_chaser != 0 and team_b_chaser != 0:
+                if team_a_chaser.distance_between_players(ball) > v.distance_between_players(ball) and team_a_chaser.team_id == v.team_id:
                     team_a_chaser = v
-                elif team_b_chaser.distance_between_players(ball) < v.distance_between_players(ball) and team_b_chaser.team_id == v.team_id:
+                elif team_b_chaser.distance_between_players(ball) > v.distance_between_players(ball) and team_b_chaser.team_id == v.team_id:
                     team_b_chaser = v
         
         if team_a_chaser.speed > team_b_chaser.speed:

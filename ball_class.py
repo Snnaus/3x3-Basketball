@@ -9,6 +9,9 @@ class Ball:
 
     #this array is to determine the destination of the ball on a bounce
     destination = [0,0]
+    
+    #this tells the game and players that a player currently has possession of the ball
+    possession = False
 
     #these attributes are to tell the pick_up function if the resulting pick_up is a steal or rebound for the player
     is_steal = False
