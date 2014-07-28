@@ -37,8 +37,8 @@ Finance System:
   
   
 
-Author:
-==============
-  Glenn Nausley 
+Author: Glenn Nausley
+======================
+ 
   
   
