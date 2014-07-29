@@ -15,7 +15,10 @@ class Court:
     #this is filling the dictionary with the position keys, AKA 'the board'; I had to make this bigger because of a keyerror when rebounds went out of bounds
     for x in range(15):
         for y in range(12):
-            positions[x,y] = 0
+            if (x,y) == (7,1):
+                positions[x,y] = "B"
+            else:
+                positions[x,y] = 0
             
     #this function receives and array 'spot', which are coordinates (i.e. court_position); it then converts those coordinates to a tuple and checks if the spot is == to zero or ball
     #in the positions hash; returning True or False respectively
@@ -76,7 +79,10 @@ class Court:
             #this is setting the current position of the player to zero on the board
             for z in self.positions:
                 if self.positions[z] == id:
-                    self.positions[z] =0
+                    if z == (7,1):
+                        self.positions[z] = 'B'
+                    else:
+                        self.positions[z] = 0
             
             #this is setting the players new position to the board
             self.positions[new_pos] = id
@@ -141,4 +147,13 @@ class Court:
                 the_num += v.block_check(shooter)
                 
         return the_num
+        
+        
+    #This method is to be used to print the court
+    def print_court(self):
+        for y in range(12):
+            line = ''
+            for x in range(15):
+                line = line + str(self.positions[x,y]) + ' '
+            print line
             

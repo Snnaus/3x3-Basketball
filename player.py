@@ -409,7 +409,7 @@ class Player():
     #ball carrier will receive a 1 move advantage; This is from the perspective of the offensive player
     def dribble_move(self, opponent):
         if self.distance_between_players(opponent) < 2:
-            check = random.randint(1, self.ball_handle) - (random.randint(1,opponent.onball_d) + 5)
+            check = random.randint(1, self.ball_handle) - (random.randint(1,opponent.onball_def) + 5)
             if check > 0:
                 return True
             else:
@@ -433,7 +433,7 @@ class Player():
         else:
             return True
             
-    #this method will take the player and the opponent to determine if the player successfully backsdown the defender; this is used while in post-up mode
+    #this method will take the player and the opponent to determine if the player successfully backs-down the defender; this is used while in post-up mode
     def back_down_check(self, opponent):
         check = random.randint(1, self.strength) - random.randint(1, opponent.strength)
         if check > 0:
@@ -540,7 +540,7 @@ class Player():
         
     #This method is the controller of the players action; that is to say the 'brain' will output a string which will then go into this method
     #where the corresponding action will be executed.
-    def off_action_controller(self, command, ball, court, opponent=None, post_command=None, target=None):
+    def off_action_controller(self, command, ball, court, opponent=None, sub_command=None):
         if command in directions:
             self.destination[0] = self.court_position[0] + directions[command][0]
             self.destination[1] = self.court_position[1] + directions[command][1]
@@ -548,8 +548,8 @@ class Player():
             if opponent != None:    
                 return self.dribble_move(opponent)
         elif command == 'post':
-            if self.post-up == True:
-                return self.post_move(opponent, post_command, ball, court)
+            if self.post_up == True:
+                return self.post_move(opponent, sub_command, ball, court)
         elif command == 'go_to_post':
             if self.post_up == False:
                 self.go_post(opponent, ball, court)
@@ -560,7 +560,7 @@ class Player():
             defense = court.defense_modifier(self)
             self.shoot(defense, ball, court)
         elif command == 'pass':
-            self.pass_ball(target, ball, court)
+            self.pass_ball(sub_command, ball, court)
         
         
         
