@@ -12,7 +12,7 @@ directions = {
     'north_east': [1,1],
     'south_west': [-1,-1],
     'south_east': [1,-1],
-    'stay': [0,0]
+    'wait': [0,0]
     }
 
 class Player():
@@ -408,12 +408,14 @@ class Player():
     #This method takes the ball carrier's defender and runs his on_ball_d attribute against the ball carrier's ball_handle to determine if the
     #ball carrier will receive a 1 move advantage; This is from the perspective of the offensive player
     def dribble_move(self, opponent):
-        check = random.randint(1, self.ball_handle) - (random.randint(1,opponent.onball_d) + 5)
-        if check > 0:
-            return True
+        if self.distance_between_players(opponent) < 2:
+            check = random.randint(1, self.ball_handle) - (random.randint(1,opponent.onball_d) + 5)
+            if check > 0:
+                return True
+            else:
+                return False   
         else:
             return False
-            
     #this method will determine if the player 'jumps' the offensive player successfully; this is from the perspective of the defender
     def def_jump(self, opponent):
         check = self.strength - opponent.strength
@@ -503,6 +505,13 @@ class Player():
     def switch_up(self):
         self.face_up, self.post_up = self.post_up, self.face_up
         
+    #this method checks if the opponent of the offense_player is within post up range to post-up
+    def go_post(self, opponent, ball, court):
+        _temp = court.players_between(ball, self.court_position)
+        for k,v in _temp.iteritems():
+            if opponent.player_id == v and self.distance_between_players(opponent) < 2:
+                self.switch_up()
+        
     #This method is to take the player, opponent, and a post direction (back, left, right) and process this into a movement; with a return
     #value on the speed post moves to determine mimicry.
     def post_move(self, opponent, the_move, ball, court):
@@ -511,8 +520,6 @@ class Player():
             speed_move = False
             if the_move == 'back':
                 self.back_down(opponent, ball, court)
-                #this is for testing
-                return 'backed down'
             else:
                 self.destination[0] = self.court_position[0] + directions[moves[the_move]][0]
                 self.destination[1] = self.court_position[1] + directions[moves[the_move]][1]
@@ -530,6 +537,31 @@ class Player():
         self.destination[0] = ball.court_position[0]
         self.destination[1] = ball.court_position[1]
         self.move_to(ball, court)
+        
+    #This method is the controller of the players action; that is to say the 'brain' will output a string which will then go into this method
+    #where the corresponding action will be executed.
+    def off_action_controller(self, command, ball, court, opponent=None, post_command=None, target=None):
+        if command in directions:
+            self.destination[0] = self.court_position[0] + directions[command][0]
+            self.destination[1] = self.court_position[1] + directions[command][1]
+            self.move_to(ball, court)
+            if opponent != None:    
+                return self.dribble_move(opponent)
+        elif command == 'post':
+            if self.post-up == True:
+                return self.post_move(opponent, post_command, ball, court)
+        elif command == 'go_to_post':
+            if self.post_up == False:
+                self.go_post(opponent, ball, court)
+        elif command == 'go_to_faceup':
+            if self.face_up == False:
+                self.switch_up
+        elif command == 'shoot':
+            defense = court.defense_modifier(self)
+            self.shoot(defense, ball, court)
+        elif command == 'pass':
+            self.pass_ball(target, ball, court)
+        
         
         
         

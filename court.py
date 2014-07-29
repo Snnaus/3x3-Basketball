@@ -132,3 +132,13 @@ class Court:
             team_b_chaser.chase_ball(ball, self)
             team_a_chaser.chase_ball(ball, self)
             
+            
+    #This method is to look at every player on the court and add together their block checks to determine the true_modifier on a players shot
+    def defense_modifier(self, shooter):
+        the_num = 0
+        for k,v in self.players.iteritems():
+            if the_num < 1000 and v.team_id != shooter.team_id:
+                the_num += v.block_check(shooter)
+                
+        return the_num
+            

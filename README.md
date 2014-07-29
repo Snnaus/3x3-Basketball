@@ -33,7 +33,7 @@ National Team:
   Players representing their country in international competitions.
   
 Finance System:
-  Club financing that operates much like a stock market. The vary a clubs finances, creating 'drama' and a metric for success.
+  Club financing that operates much like a stock market. This varies a clubs finances, creating 'drama' and a metric for success.
   
   
 
