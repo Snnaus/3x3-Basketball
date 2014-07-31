@@ -243,22 +243,22 @@ class Player():
     #it returns a "destination" for the defender to go to
     def on_ball_destination(self, offense_player, shooter, destination=[7,1]):
         if shooter == True:
-            x = destination[0] + round((offense_player.court_position[0] - destination[0])*0.75)
-            y = destination[1] + round((offense_player.court_position[1] - destination[1])*0.75)
-            destination = [x,y]
+            x = destination[0] + round((offense_player.court_position[0] - destination[0])*0.9)
+            y = destination[1] + round((offense_player.court_position[1] - destination[1])*0.9)
+            destination = [int(x),int(y)]
         else:
             x = destination[0] + round((offense_player.court_position[0] - destination[0])*0.5)
             y = destination[1] + round((offense_player.court_position[1] - destination[1])*0.5)
-            destination = [x,y]
+            destination = [int(x),int(y)]
 
-            
+           
         return destination
         
     #This function will call the on_ball_destination function and proceed to use it in a move_to function; 
     #this function will also call the hand_check function if the offensive player is close enough;
     #takes 3 parameters: offense_player, boolean if the player should be played tight (i.e. if he were a shooter), and the ball function
     def on_ball_d(self, offense_player, ball, court, play_tight=False):
-        self.on_ball_destination(offense_player, play_tight)
+        self.destination = self.on_ball_destination(offense_player, play_tight)
         
         self.move_to(ball, court)
         

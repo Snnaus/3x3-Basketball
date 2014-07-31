@@ -151,9 +151,20 @@ class Court:
         
     #This method is to be used to print the court
     def print_court(self):
+        up_low_bound = ' '
+        for x in range(15):
+            up_low_bound = up_low_bound + '--'
+        up_low_bound = up_low_bound + ' '
+        print up_low_bound
         for y in range(12):
-            line = ''
+            line = '| '
             for x in range(15):
-                line = line + str(self.positions[x,y]) + ' '
+                if self.positions[x,y] != 0:
+                    line = line + str(self.positions[x,y]) + ' '
+                else:
+                    line = line + '  '
+            line = line + '|'
             print line
+        print up_low_bound
+        print '\n'
             
