@@ -417,7 +417,7 @@ class Player():
         else:
             return False
     #this method will determine if the player 'jumps' the offensive player successfully; this is from the perspective of the defender
-    def def_jump(self, opponent):
+    def def_cutoff(self, opponent):
         check = self.strength - opponent.strength
         if check >= 0:
             return True
@@ -572,7 +572,22 @@ class Player():
             self.on_ball_d(ball_handler, ball, court)
         elif command == 'ball_tight':
             self.on_ball_d(ball_handler, ball, court, True)
-        
+            
+    #this method is the controller for the off_ball actions of a player
+    def off_ball_controller(self, command, ball, court, opponent=None, sub_command=None):
+        if command in directions:
+            self.destination[0] += directions[command][0]
+            self.destination[1] += directions[command][1]
+            self.move_to(ball, court)
+        elif command == 'post':
+            if self.post_up == True:
+                return self.post_move(opponent, sub_command, ball, court)
+        elif command == 'go_to_post':
+            if self.post_up == False:
+                self.go_post(opponent, ball, court)
+        elif command == 'go_to_faceup':
+            if self.face_up == False:
+                self.switch_up
         
         
         
