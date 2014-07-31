@@ -174,11 +174,6 @@ class Player():
                 court_modifier = 25
             else:
                 court_modifier = 0
-                
-            #this has been replaced by the block_check function
-            """true_modifier = defense_modifier - (self.shooting_traffic + self.height)
-            if true_modifier < 0:
-                true_modifier = 0"""
             
             layup_percent = 0    
             if self.dunk == True:
@@ -243,8 +238,8 @@ class Player():
     #it returns a "destination" for the defender to go to
     def on_ball_destination(self, offense_player, shooter, destination=[7,1]):
         if shooter == True:
-            x = destination[0] + round((offense_player.court_position[0] - destination[0])*0.9)
-            y = destination[1] + round((offense_player.court_position[1] - destination[1])*0.9)
+            x = destination[0] + round((offense_player.court_position[0] - destination[0])*0.75)
+            y = destination[1] + round((offense_player.court_position[1] - destination[1])*0.75)
             destination = [int(x),int(y)]
         else:
             x = destination[0] + round((offense_player.court_position[0] - destination[0])*0.5)
@@ -374,8 +369,10 @@ class Player():
             x_unit = 0
             if check_array[1] < 0:
                 slope = -1
-            else:
+            elif check_array[1] > 0:
                 slope = 1
+            else:
+                slope = 0
 
         final_check = [0,0]
         final_check[0] = x_unit
@@ -576,8 +573,8 @@ class Player():
     #this method is the controller for the off_ball actions of a player
     def off_ball_controller(self, command, ball, court, opponent=None, sub_command=None):
         if command in directions:
-            self.destination[0] += directions[command][0]
-            self.destination[1] += directions[command][1]
+            self.destination[0] = self.court_position[0] + directions[command][0]
+            self.destination[1] = self.court_position[1] + directions[command][1]
             self.move_to(ball, court)
         elif command == 'post':
             if self.post_up == True:

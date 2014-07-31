@@ -1,4 +1,4 @@
-import random
+import random, math
 
 
 
@@ -27,7 +27,7 @@ class Court:
         the_spot = spot[0],spot[1]
         
         if ball.out_of_bounds_check(spot) == False:
-            if self.positions[the_spot] == 0:
+            if self.positions[the_spot] == 0 or self.positions[the_spot] == 'B':
                 is_open = True
             
         return is_open
@@ -43,7 +43,7 @@ class Court:
         slope = 1
         x_unit = 1
         if x_distance != 0:
-            slope = (new_position[1] - start_position[1]) / abs(x_distance)
+            slope = float(new_position[1] - start_position[1]) / float(abs(x_distance))
             if x_distance < 0:
                 x_unit = -1
         else:
@@ -55,7 +55,6 @@ class Court:
         test_position = [0,0]
         test_position[0] = start_position[0]
         test_position[1] = start_position[1]
-        #print start_position, x_unit, slope
         player_count = 0
         for x in range(1,abs(x_distance)+1):
             test_position[0] += x_unit
@@ -157,14 +156,21 @@ class Court:
         up_low_bound = up_low_bound + ' '
         print up_low_bound
         for y in range(12):
-            line = '| '
+            line = '|'
             for x in range(15):
                 if self.positions[x,y] != 0:
                     line = line + str(self.positions[x,y]) + ' '
+                elif self.distance_from_basket([x,y]) == 6:
+                    line = line + 'Th'
                 else:
                     line = line + '  '
             line = line + '|'
             print line
         print up_low_bound
         print '\n'
+        
+        
+    #this method is to return the distance from the basket a certain point is; this may replace the players function
+    def distance_from_basket(self, spot):
+        return int(math.sqrt(((spot[0]-7)**2)+((spot[1]-1)**2)))
             
