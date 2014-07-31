@@ -540,7 +540,7 @@ class Player():
         
     #This method is the controller of the players action; that is to say the 'brain' will output a string which will then go into this method
     #where the corresponding action will be executed.
-    def off_action_controller(self, command, ball, court, opponent=None, sub_command=None):
+    def off_controller(self, command, ball, court, opponent=None, sub_command=None):
         if command in directions:
             self.destination[0] = self.court_position[0] + directions[command][0]
             self.destination[1] = self.court_position[1] + directions[command][1]
@@ -561,6 +561,17 @@ class Player():
             self.shoot(defense, ball, court)
         elif command == 'pass':
             self.pass_ball(sub_command, ball, court)
+            
+    #this method is the controller for the defensive actions
+    def def_controller(self, command, opponent, ball, court, ball_handler=None):
+        if command == 'off':
+            self.on_ball_d(opponent, ball, court)
+        elif command == 'tight':
+            self.on_ball_d(opponent, ball, court, True)
+        elif command == 'ball_off':
+            self.on_ball_d(ball_handler, ball, court)
+        elif command == 'ball_tight':
+            self.on_ball_d(ball_handler, ball, court, True)
         
         
         
