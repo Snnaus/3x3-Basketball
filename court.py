@@ -13,12 +13,10 @@ class Court:
     players = {}
     
     #this is filling the dictionary with the position keys, AKA 'the board'; I had to make this bigger because of a keyerror when rebounds went out of bounds
-    for x in range(15):
-        for y in range(12):
-            if (x,y) == (7,1):
-                positions[x,y] = "B"
-            else:
-                positions[x,y] = 0
+    def __init__(self):
+        for x in range(15):
+            for y in range(12):
+                self.positions[x,y] = 0
             
     #this function receives and array 'spot', which are coordinates (i.e. court_position); it then converts those coordinates to a tuple and checks if the spot is == to zero or ball
     #in the positions hash; returning True or False respectively
@@ -150,11 +148,12 @@ class Court:
         
     #This method is to be used to print the court
     def print_court(self):
+        total = ''
         up_low_bound = ' '
         for x in range(15):
             up_low_bound = up_low_bound + '--'
-        up_low_bound = up_low_bound + ' '
-        print up_low_bound
+        up_low_bound = up_low_bound + ' \n'
+        total = total + up_low_bound
         for y in range(12):
             line = '|'
             for x in range(15):
@@ -164,13 +163,29 @@ class Court:
                     line = line + 'Th'
                 else:
                     line = line + '  '
-            line = line + '|'
-            print line
-        print up_low_bound
-        print '\n'
-        
+            line = line + '|\n'
+            total = total + line
+        total = total + up_low_bound
+        return total
         
     #this method is to return the distance from the basket a certain point is; this may replace the players function
     def distance_from_basket(self, spot):
         return int(math.sqrt(((spot[0]-7)**2)+((spot[1]-1)**2)))
+        
+    #this method is for the tk animator
+    def tk_frame(self):
+        map = []
+        for x in range(15):
+            row = []
+            for y in range(12):
+                if x == 7 and y == 1:
+                    row.append('B')
+                elif self.positions[x,y] != 0:
+                    row.append(self.positions[x,y])
+                elif self.distance_from_basket([x,y]) == 6:
+                    row.append('Th')
+                else:
+                    row.append(self.positions[x,y])
+            map.append(row)
+        return map
             
