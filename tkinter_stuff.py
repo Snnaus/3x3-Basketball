@@ -4,7 +4,7 @@ import time
 class court_animation():
     def __init__(self, sequence):
         self.root = Tk()
-        self.canvas = Canvas(self.root, width=600, height=480, bg='blue')
+        self.canvas = Canvas(self.root, width=600, height=480)
         self.sequence = sequence
         self.map = []
         self.frame_count = 0
@@ -28,17 +28,16 @@ class court_animation():
             for row in self.map:
                 y_count = 0
                 for column in row:
+                    color = 'tan'
                     if column == 'Th':
                         color = 'white'
                     elif column == 'B':
                         color = 'red'
-                    elif column == 0:
-                        color ='blue'
-                    else:
+                    elif column != 0:
                         color = 'green'
                     self.canvas.create_rectangle(40*x_count, 40*y_count, 40*(x_count+1), 40*(y_count+1), outline=color, fill=color)
                     self.canvas.pack(fill=BOTH, expand=1)
                     y_count += 1
                 x_count += 1
             self.frame_count += 1
-            self.root.after(1000, self.animate)
+            self.root.after(333, self.animate)
