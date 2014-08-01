@@ -150,11 +150,12 @@ class Court:
         
     #This method is to be used to print the court
     def print_court(self):
+        total = ''
         up_low_bound = ' '
         for x in range(15):
             up_low_bound = up_low_bound + '--'
-        up_low_bound = up_low_bound + ' '
-        print up_low_bound
+        up_low_bound = up_low_bound + ' \n'
+        total = total + up_low_bound
         for y in range(12):
             line = '|'
             for x in range(15):
@@ -164,11 +165,10 @@ class Court:
                     line = line + 'Th'
                 else:
                     line = line + '  '
-            line = line + '|'
-            print line
-        print up_low_bound
-        print '\n'
-        
+            line = line + '|\n'
+            total = total + line
+        total = total + up_low_bound
+        return total
         
     #this method is to return the distance from the basket a certain point is; this may replace the players function
     def distance_from_basket(self, spot):
