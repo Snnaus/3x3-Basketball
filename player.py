@@ -239,8 +239,8 @@ class Player():
     #it returns a "destination" for the defender to go to
     def on_ball_destination(self, offense_player, shooter, destination=[7,1]):
         if shooter == True:
-            x = destination[0] + round((offense_player.court_position[0] - destination[0])*0.9)
-            y = destination[1] + round((offense_player.court_position[1] - destination[1])*0.9)
+            x = destination[0] + round((offense_player.court_position[0] - destination[0])*0.8)
+            y = destination[1] + round((offense_player.court_position[1] - destination[1])*0.8)
             destination = [int(x),int(y)]
         else:
             x = destination[0] + round((offense_player.court_position[0] - destination[0])*0.5)
