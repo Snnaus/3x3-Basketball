@@ -19,6 +19,7 @@ class Player():
     #This class is designed to give a player the functions needed to operate in the game
     player_id = 0
     team_id = -1
+    team_color = 'white'
     
     def __init__(self, id):
         self.player_id = id
@@ -238,8 +239,8 @@ class Player():
     #it returns a "destination" for the defender to go to
     def on_ball_destination(self, offense_player, shooter, destination=[7,1]):
         if shooter == True:
-            x = destination[0] + round((offense_player.court_position[0] - destination[0])*0.75)
-            y = destination[1] + round((offense_player.court_position[1] - destination[1])*0.75)
+            x = destination[0] + round((offense_player.court_position[0] - destination[0])*0.9)
+            y = destination[1] + round((offense_player.court_position[1] - destination[1])*0.9)
             destination = [int(x),int(y)]
         else:
             x = destination[0] + round((offense_player.court_position[0] - destination[0])*0.5)
