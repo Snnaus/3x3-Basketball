@@ -85,8 +85,8 @@ class Court:
             self.positions[new_pos] = id
             
     
-    #this method is to take all the players in the players dict and roll for their initiative and sore them in order; this leads into the turn function that will take the order 
-    #and proceed with the logic of the game.
+    #this method is to take all the players in the players dict and roll for their initiative and sort them in order; this leads into the turn function that will take the order 
+    #and proceed with the logic of the game. it returns a key for the order and player_id as the value.
     def initiative_roll(self):
         init_rolls = {}
         the_order = {}
@@ -188,4 +188,42 @@ class Court:
                     row.append(self.positions[x,y])
             map.append(row)
         return map
+        
+    #this method is to set each players move_count for the turn
+    def set_move_count(self):
+        highest = 0
+        for player in self.players:
+            player.move_count = round(player.speed/4)
+            if player.move_count > highest:
+                highest = player.move_count
+                
+        return highest
+            
+    #this method is for the 'second' mechanic; a second (which represents the unit of time) is a bundle of turns by the players
+    #this method executes those turns
+    def game_second(self, ball):
+        if ball.possession == False:
+            self.loose_ball_chase(ball)
+        else:
+            if ball.out_of_bounds_check(ball.court_position) == True:
+                #end the second and change possession; This is to check if the ball has rolled out of bounds.
+                #this is a place-holder
+            else:
+                order = self.initiative_roll()
+                turn_count = self.set_move_count()
+                while True:
+                    for x in range(1,7):
+                        #this gate is to check if the player is fast enough the move at this turn.
+                        if self.players[order[x]].move_count >= turn_count:
+                            current_player = self.players[order[x]]
+                            if current_player.has_ball == True:
+                                #Send the player into the the Offensive Brain
+                            elif current_player.on_defense == True:
+                                #send the player into the defensive brain
+                            else:
+                                #send the player into the off_ball brain
+                                
+                    turn_count -= 1
+                    if turn_count <= 0:
+                        break
             
