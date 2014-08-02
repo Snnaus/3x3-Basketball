@@ -178,10 +178,10 @@ class Court:
         for x in range(15):
             row = []
             for y in range(12):
-                if x == 7 and y == 1:
-                    row.append('B')
-                elif self.positions[x,y] != 0:
+                if self.positions[x,y] != 0:
                     row.append(self.positions[x,y])
+                elif x == 7 and y == 1:
+                    row.append('B')
                 elif self.distance_from_basket([x,y]) == 6:
                     row.append('Th')
                 else:
