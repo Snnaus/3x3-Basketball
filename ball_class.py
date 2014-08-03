@@ -142,12 +142,17 @@ class Ball:
             new_player.has_ball = True
             self.possession = True
             ball.court_position[0], ball.court_position[1] = new_player.court_position[0], new_player.court_position[1]
-            self.tuurnt_over(new_player, rebound)
+            self.tuurnt_over(new_player, rebound, court)
                 
             
     #this method is to adjust the turnt_over attribute after a turnover
-    def tuurnt_over(self, new_player, rebound):
+    def tuurnt_over(self, new_player, rebound, court):
             if new_player.team_id != self.team_id_possession or rebound == True:
                 turnt_over = True
                 self.team_id_possession = new_player.team_id
+                for player in court.players:
+                    if player.team_id == new_player.team_id:
+                        player.on_defense = False
+                    else:
+                        player.on_defense = True
         
