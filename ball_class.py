@@ -140,6 +140,7 @@ class Ball:
             if self.is_rebound == True:
                 rebound = True
             new_player.has_ball = True
+            self.last_possession = new_player.player_id
             self.possession = True
             ball.court_position[0], ball.court_position[1] = new_player.court_position[0], new_player.court_position[1]
             self.tuurnt_over(new_player, rebound, court)
@@ -147,12 +148,16 @@ class Ball:
             
     #this method is to adjust the turnt_over attribute after a turnover
     def tuurnt_over(self, new_player, rebound, court):
-            if new_player.team_id != self.team_id_possession or rebound == True:
+            if new_player.team_id != court.players[self.last_possession].team_id or rebound == True:
                 turnt_over = True
-                self.team_id_possession = new_player.team_id
                 for player in court.players:
                     if player.team_id == new_player.team_id:
                         player.on_defense = False
                     else:
                         player.on_defense = True
+                        
+    #this method is used to determine if the ball has been moved outside of the 2point line, 'clearing' it so the new team can score.
+    def clear_out_check(self, court):
+        if court.distance_from_basket(self.court_position) >= 6:
+            self.team_id_possession = court.players[self.last_possession].team_id
         

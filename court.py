@@ -237,30 +237,28 @@ class Court:
     #this method executes those turns
     def game_second(self, ball, sequence):
         if ball.possession == False:
-            self.loose_ball_chase(ball)
+            for x in range(2):
+                self.loose_ball_chase(ball)
         else:
-            if ball.out_of_bounds_check(ball.court_position) == True:
-                #end the second and change possession; This is to check if the ball has rolled out of bounds.
-                #this is a place-holder
-            else:
-                order = self.initiative_roll()
-                turn_count = self.set_move_count()
-                while True:
-                    for x in range(1,7):
-                        #this gate is to check if the player is fast enough the move at this turn.
-                        if self.players[order[x]].move_count >= turn_count:
-                            current_player = self.players[order[x]]
-                            if current_player.has_ball == True:
-                                #Send the player into the the Offensive Brain
-                            elif current_player.on_defense == True:
-                                #send the player into the defensive brain
-                            else:
-                                #send the player into the off_ball brain
-                            self.update_player_pos()    
-                    turn_count -= 1
-                    sequence.append(self.tk_frame())
-                    if turn_count <= 0:
-                        break
+            order = self.initiative_roll()
+            turn_count = self.set_move_count()
+            while True:
+                ball.clear_out_check(court)
+                for x in range(1,7):
+                    #this gate is to check if the player is fast enough the move at this turn.
+                    if self.players[order[x]].move_count >= turn_count:
+                        current_player = self.players[order[x]]
+                        if current_player.has_ball == True:
+                            #Send the player into the the Offensive Brain
+                        elif current_player.on_defense == True:
+                            #send the player into the defensive brain
+                        else:
+                            #send the player into the off_ball brain
+                        self.update_player_pos()    
+                turn_count -= 1
+                sequence.append(self.tk_frame())
+                if turn_count <= 0:
+                    break
                         
     #this is the game method; here where the game loop is found
     def game(self, ball):
@@ -275,12 +273,13 @@ class Court:
             chance_count += 1
         
         sequence = []
+        shot_clock_violation = False
+        out_bounds = 0
+        ball.turnt_over = False
         while True:
             #there is a 12 second shot clock
             shot_clock = 12
-            shot_clock_violation = False
-            out_bounds = ball.out_of_bounds_check(ball.court_position)
-            ball.turnt_over = False
+            
             if shot_clock_violation == True or out_bounds == True or seconds == 600:
                 if shot_clock_violation == True or out_bounds == True;
                     for team in self.point_guards:
@@ -288,14 +287,18 @@ class Court:
                             ball.team_id_possession = team
                             break
                 self.player_reset(ball)
+            shot_clock_violation = False
+            out_bounds = 0
+            ball.turnt_over = False
             while True:
                 self.game_second(ball, sequence)
+                out_bounds = ball.out_of_bounds_check(ball.court_position)
                 shot_clock -= 1
                 seconds -= 1
                 if shot_clock <= 0:
                     shot_clock_violation = True
                     break
-                elif seconds <= 0 or ball.turnt_over == True:
+                elif seconds <= 0 or ball.turnt_over == True or out_bounds == True:
                     break
             if seconds <= 0:
                 break
