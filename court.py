@@ -201,7 +201,7 @@ class Court:
             
     #this method is for the 'second' mechanic; a second (which represents the unit of time) is a bundle of turns by the players
     #this method executes those turns
-    def game_second(self, ball):
+    def game_second(self, ball, sequence):
         if ball.possession == False:
             self.loose_ball_chase(ball)
         else:
@@ -222,8 +222,28 @@ class Court:
                                 #send the player into the defensive brain
                             else:
                                 #send the player into the off_ball brain
-                                
+                            self.update_player_pos()    
                     turn_count -= 1
+                    sequence.append(self.tk_frame())
                     if turn_count <= 0:
                         break
+                        
+    #this is the game method; here where the game loop is found
+    def game(self, ball):
+        #the games last 10 mins(600 secs) with no half time
+        seconds = 600
+        
+        sequence = []
+        while True:
+            #there is a 12 second shot clock
+            shot_clock = 12
+            ball.turnt_over = False
+            while True:
+                self.game_second(ball, sequence)
+                shot_clock -= 1
+                seconds -= 1
+                if shot_clock <= 0 or seconds <= 0 or ball.turnt_over == True:
+                    break
+            if seconds <= 0:
+                break
             

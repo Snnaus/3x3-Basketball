@@ -12,6 +12,13 @@ class Ball:
     
     #this tells the game and players that a player currently has possession of the ball
     possession = False
+    
+    #this attribute tells the game which team can score; conversely the other team in the game has to take the ball out to the 3point line
+    #in order to be able to score.
+    team_id_possession = 0
+    
+    #this method is to tell the game loop that the ball has changed possession, thus resetting the shot clock
+    turnt_over = False
 
     #these attributes are to tell the pick_up function if the resulting pick_up is a steal or rebound for the player
     is_steal = False
@@ -114,7 +121,7 @@ class Ball:
         
         if self.box_out_range() == True and len(rebounders) > 0:
             #this is the external rebound function found in player.py file
-            rebound_script(rebounders, court.players)
+            rebound_script(rebounders, court)
             
     #this method switches the balls possession; 
     #it will also adjust the steal/rebound/turnover stats of the respective players (currently not implemented 7/27/2014)
@@ -131,6 +138,13 @@ class Ball:
                 
             new_player.has_ball = True
             self.possession = True
+            ball.court_position[0], ball.court_position[1] = new_player.court_position[0], new_player.court_position[1]
+            self.tuurnt_over()
                 
             
+    #this method is to adjust the turnt_over attribute after a turnover
+    def tuurnt_over(self, new_player):
+        if new_player.team_id != self.team_id_possession:
+            turnt_over = True
+            self.team_id_possession = new_player.team_id
         

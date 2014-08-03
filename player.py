@@ -157,8 +157,7 @@ class Player():
             if defender.has_ball == True:
                 #this is a placeholder
                 ball.court_position = defender.court_position
-                #self.turnover += 1 #this is a counter to give the passer a turnover for the lost pass
-                print 'the defender has the ball'
+                ball.poss_change(defender, court)
             else:
                 distance -= defender.distance_between_players(self)
                 ball.destination[0], ball.destination[1] = defender.court_position[0], defender.court_position[1]
@@ -603,11 +602,11 @@ class Player():
 #rebound zone, i.e. near the basket; if they are it proceeds through the box-out function
 #and compares the two rebound_jumps to determine which player comes out with the ball;
 #this is the first appearance of the players global dictionary in the game 7/16/2014
-def rebound_script(rebounders, players):
-    insidepl = players[rebounders[1]]
+def rebound_script(rebounders, court):
+    insidepl = court.players[rebounders[1]]
     outsidepl = False
     if 2 in rebounders:
-        outsidepl = players[rebounders[2]]
+        outsidepl = court.players[rebounders[2]]
     
     boxed_out = False
     if outsidepl != False:
@@ -618,11 +617,12 @@ def rebound_script(rebounders, players):
     #the box-out, becoming the inside player
     if boxed_out == True:
         if insidepl.strength + 8 < outsidepl.strength + random.randint(0, outsidepl.speed):
+            #this is the flipping for the local variables
+            insidepl = court.players[rebounders[2]]
+            outsidepl = court.players[rebounders[1]]
             #This flips the court position of the two players, in order for the rendering and position stuff
             outsidepl.court_position, insidepl.court_position = insidepl.court_position, outsidepl.court_position
-            #this is the flipping for the local variables
-            insidepl = players[rebounders[2]]
-            outsidepl = players[rebounders[1]]
+            
             
         
     reb_modifier = 0
@@ -632,17 +632,12 @@ def rebound_script(rebounders, players):
         
     reb_check = 0
     if boxed_out == False:
-        #this is a placeholder
-        print "the inside player gets the rebound unconstested"
+        ball.poss_change(insidepl, court)
     else:
         reb_check += insidepl.rebound_jump()
         reb_check -= outsidepl.rebound_jump(reb_modifier)
         
     if reb_check >= 0:
-        #this is a placeholder
-        print "The inside player rebounded the ball"
-        insidepl.has_ball = True
+        ball.poss_change(insidepl, court)
     else:
-        #this is a placeholder
-        print "The outside player rebounded the ball"
-        outsidepl.has_ball = True
+        ball.poss_change(outsidepl, court)
