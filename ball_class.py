@@ -136,15 +136,18 @@ class Ball:
                 new_player.reb_stat += 1
                 self.rebound = False"""
                 
+            rebound = False
+            if self.is_rebound == True:
+                rebound = True
             new_player.has_ball = True
             self.possession = True
             ball.court_position[0], ball.court_position[1] = new_player.court_position[0], new_player.court_position[1]
-            self.tuurnt_over()
+            self.tuurnt_over(new_player, rebound)
                 
             
     #this method is to adjust the turnt_over attribute after a turnover
-    def tuurnt_over(self, new_player):
-        if new_player.team_id != self.team_id_possession:
-            turnt_over = True
-            self.team_id_possession = new_player.team_id
+    def tuurnt_over(self, new_player, rebound):
+            if new_player.team_id != self.team_id_possession or rebound == True:
+                turnt_over = True
+                self.team_id_possession = new_player.team_id
         

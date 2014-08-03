@@ -1,4 +1,5 @@
 import random, math
+from tkinter_stuff import *
 
 
 
@@ -11,6 +12,13 @@ class Court:
     #I need to add a method which populates this; I also need a way to identify whose on which team and whose on the court and whose a sub,
     #but these may be added later once I get to the point of adding teams 
     players = {}
+    
+    #this is a dictionary telling the game which player is defending which; the dictionary key is the team_id, which will lead to the dictionary of
+    #the specific team; the key for that dictionary is the player_id, the value is the player_id of the player he is defending.
+    defense_pairs = {}
+    
+    #this dictionary is for each teams respective point guard; the key will relate to the players team_id and the value will be the players id
+    point_guards = {}
     
     #this is filling the dictionary with the position keys, AKA 'the board'; I had to make this bigger because of a keyerror when rebounds went out of bounds
     def __init__(self):
@@ -189,6 +197,32 @@ class Court:
             map.append(row)
         return map
         
+    #this method is to reset the players to a default position during the game; only at the start of the game, after on floor fouls, and after out of bounds
+    def player_reset(self, ball):
+        team = ball.team_id_possession
+        one = self.players[self.point_guards[team]]
+        two = 0
+        three = 0
+        for player in self.players:
+            if player.team_id == team and two == 0:
+                two = player
+            elif player.team_id == team and three == 0:
+                three = player
+                break
+        one.court_position, two.court_position, three.court_position = [7,9], [13,7], [1,7]
+        for teams in defense_pairs:
+            if teams !+ team:
+                defense = defense_pairs[teams]
+                for defender,offense in teams:
+                    new_position = defender.onball_destination(offense, False)
+                    self.players[defender].court_position[0], self.players[defender].court_position[1] = new_position[0], new_position[1]
+        self.update_player_pos()
+        for player in self.players:
+            player.has_ball = False
+            if player.player_id == self.point_guards[team]:
+                player.has_ball = True
+        
+        
     #this method is to set each players move_count for the turn
     def set_move_count(self):
         highest = 0
@@ -232,18 +266,37 @@ class Court:
     def game(self, ball):
         #the games last 10 mins(600 secs) with no half time
         seconds = 600
+        #this is to determine the team who starts with the ball at the beginning of the game; simulates a coin flip
+        chance = random.randint(1,100)
+        chance_count = 0
+        for team in self.point_guards:
+            if chance <= 50 + (chance_count*50):
+                ball.team_id_possession = team
+            chance_count += 1
         
         sequence = []
         while True:
             #there is a 12 second shot clock
             shot_clock = 12
+            shot_clock_violation = False
+            out_bounds = ball.out_of_bounds_check(ball.court_position)
             ball.turnt_over = False
+            if shot_clock_violation == True or out_bounds == True or seconds == 600:
+                if shot_clock_violation == True or out_bounds == True;
+                    for team in self.point_guards:
+                        if team != ball.team_id_possession:
+                            ball.team_id_possession = team
+                            break
+                self.player_reset(ball)
             while True:
                 self.game_second(ball, sequence)
                 shot_clock -= 1
                 seconds -= 1
-                if shot_clock <= 0 or seconds <= 0 or ball.turnt_over == True:
+                if shot_clock <= 0:
+                    shot_clock_violation = True
+                    break
+                elif seconds <= 0 or ball.turnt_over == True:
                     break
             if seconds <= 0:
                 break
-            
+        animation = court_animation(sequence, self)    
