@@ -104,7 +104,7 @@ class Court:
             return key
             
             
-    #this method is to return the passing sense key.
+    #this method is to generate the passing sense key.
     def pass_sense(self, player, receiver, ball):
         key = str(self.nine_court(player.court_position)) + str(self.nine_court(reiceiver.court_position))
         between = self.players_between(ball, receiver.court_position, player.court_position)
@@ -114,6 +114,10 @@ class Court:
                 between_bin = '1'
         key = key + between_bin
         return key
+     
+    #this method is to generate the defensive sense key.
+    def def_sense(self, player, opponent, ball_car):
+        return str(self.nine_court(player.court_position)) + str(self.nine_court(opponent.court_position)) + str(self.nine_court(ball_car.court_position))
         
     #This function takes two inputs relating to two positions on the court; it will then return the number or players between those two positions and the ids of the players;
     #this is used for the rebounding script, and potentially the tip pass function; the players id is stored in a dictionary, with the first key being the inside player and
