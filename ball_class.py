@@ -19,7 +19,7 @@ class Ball:
     
     #this method is to tell the game loop that the ball has changed possession, thus resetting the shot clock
     turnt_over = False
-
+    
     #these attributes are to tell the pick_up function if the resulting pick_up is a steal or rebound for the player
     is_steal = False
     is_rebound = False

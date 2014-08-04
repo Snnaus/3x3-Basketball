@@ -38,6 +38,83 @@ class Court:
             
         return is_open
         
+    #this method is for the sensory keys of the brains, specifically the 9 court positions. This takes a players court_position as the parameter/input.
+    def nine_court(self, spot):
+        if spot[0] <= 1:
+            if spot[1] <= 3:
+                return 1
+            elif spot[1] <= 8:
+                return 6
+            else:
+                return 9
+        elif spot[0] <= 4:
+            if spot[1] <= 3:
+                return 2
+            elif spot[1] <= 8:
+                return 6
+            else:
+                return 9
+        elif spit[0] <= 9:
+            if spot[1] <= 3:
+                return 3
+            elif spot[1] <= 8:
+                return 7
+            else:
+                return 9
+        elif spot[0] <= 12:
+            if spot[1] <= 3:
+                return 4
+            elif spot[1] <= 8:
+                return 8
+            else:
+                return 9
+        elif spot[0] <= 14:
+            if spot[1] <= 3:
+                return 5
+            elif spot[1] <= 8:
+                return 8
+            else:
+                return 9
+    
+    #this method is to create the proximity sensory key. It takes the players court_position as the input. This is for the offensive and off_ball controllers.
+    def proximity_key(self, player, ball, shot=False):
+        key = ''
+        key = key + str(self.nine_court(player.court_position))
+        if shot == False:
+            for k,v in directions.iteritems():
+                test_position = [0,0]
+                test_position[0] = player.court_position[0] + v[0]
+                test_position[1] = player.court_position[1] + v[1]
+                digit = self.spot_open(test_position, ball)
+                if digit == True:
+                    key = key + '1'
+                else:
+                    key = key + '0'
+            return key
+        else:
+            for k,v in directions.iteritems():
+                test_position = [0,0]
+                test_position[0] = player.court_position[0] + v[0]
+                test_position[1] = player.court_position[1] + v[1]
+                digit = self.spot_open(test_position, ball)
+                if digit == True or player.team_id == self.players[self.positions[test_position[0],test_position[1]]].team_id:
+                    key = key + '1'
+                else:
+                    key = key + '0'
+            return key
+            
+            
+    #this method is to return the passing sense key.
+    def pass_sense(self, player, receiver, ball):
+        key = str(self.nine_court(player.court_position)) + str(self.nine_court(reiceiver.court_position))
+        between = self.players_between(ball, receiver.court_position, player.court_position)
+        between_bin = '0'
+        for k,v in between.iteritems():
+            if v.team_id != player.team_id:
+                between_bin = '1'
+        key = key + between_bin
+        return key
+        
     #This function takes two inputs relating to two positions on the court; it will then return the number or players between those two positions and the ids of the players;
     #this is used for the rebounding script, and potentially the tip pass function; the players id is stored in a dictionary, with the first key being the inside player and
     #the second being the outside player
