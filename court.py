@@ -273,6 +273,11 @@ class Court:
                     row.append('B')
                 elif self.distance_from_basket([x,y]) == 6:
                     row.append('Th')
+                elif x >= 5 and x <= 9:
+                    if y >= 0 and y <= 5:
+                        row.append('Pa')
+                    else:
+                        row.append(self.positions[x,y])
                 else:
                     row.append(self.positions[x,y])
             map.append(row)
@@ -391,4 +396,4 @@ class Court:
                     break
             if seconds <= 0:
                 break
-        animation = court_animation(sequence, self)    
+        animation = Court_Animation(sequence, self)   

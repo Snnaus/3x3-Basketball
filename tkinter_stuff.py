@@ -1,7 +1,7 @@
 from Tkinter import *
 import time
 
-class court_animation():
+class Court_Animation():
     def __init__(self, sequence, court):
         self.root = Tk()
         self.canvas = Canvas(self.root, width=600, height=480)
@@ -34,6 +34,8 @@ class court_animation():
                     if column == 'Th':
                         color = 'white'
                         outline_c = 'white'
+                    elif column == 'Pa':
+                        color = 'blue'
                     elif column == 'B':
                         color = 'red'
                     elif column != 0:
