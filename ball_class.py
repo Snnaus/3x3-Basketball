@@ -30,6 +30,9 @@ class Ball:
     last_touch = 0
     assistor = 0
     assistor_timer = 0 #this counts the seconds after passing the ball; if it exceeds 3 seconds the assister does not receive an assist
+    
+    #this is to tell the game that the ball_handler has picked up his dribble, which means he can no longer move-only pass, shoot, or wait.
+    picked_up_dribble = False
 
     #this function is to determine the destination of the ball on a bounce; it takes the distance of the shot taken and gives it a random distance to go;
     #it should give the ball a random slope and random 'power' and then multiple that and add it to the position of the basket to get the position of the ball; The ball should
@@ -95,8 +98,12 @@ class Ball:
     #It returns True if IT IS OUT OF BOUNDS.
     def out_of_bounds_check(self, position):
         if position[0] > 14 or position[1] > 11:
+            ball.is_steal = False
+            ball.is_rebound = False
             return True
         elif position[0] < 0 or position[1] < 0:
+            ball.is_steal = False
+            ball.is_rebound = False
             return True
         else:
             return False
@@ -140,10 +147,11 @@ class Ball:
             if self.is_rebound == True:
                 rebound = True
             new_player.has_ball = True
+            self.tuurnt_over(new_player, rebound, court)
             self.last_possession = new_player.player_id
+            self.last_touch = new_player.player_id
             self.possession = True
             ball.court_position[0], ball.court_position[1] = new_player.court_position[0], new_player.court_position[1]
-            self.tuurnt_over(new_player, rebound, court)
                 
             
     #this method is to adjust the turnt_over attribute after a turnover
@@ -160,4 +168,8 @@ class Ball:
     def clear_out_check(self, court):
         if court.distance_from_basket(self.court_position) >= 6:
             self.team_id_possession = court.players[self.last_possession].team_id
+        
+    #this method is to be used to update the balls position when a player moves
+    def update_pos(self, player_pos):
+        self.court_position[0], self.court_position[1] = player_pos[0], player_pos[1]
         

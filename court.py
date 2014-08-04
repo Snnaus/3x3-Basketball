@@ -287,21 +287,28 @@ class Court:
         for player in self.players:
             if player.team_id == team and two == 0:
                 two = player
+                player.on_defense = False
             elif player.team_id == team and three == 0:
                 three = player
+                player.on_defense = False
                 break
         one.court_position, two.court_position, three.court_position = [7,9], [13,7], [1,7]
         for teams in defense_pairs:
-            if teams !+ team:
+            if teams != team:
                 defense = defense_pairs[teams]
                 for defender,offense in teams:
-                    new_position = defender.onball_destination(offense, False)
+                    new_position = defender.onball_destination(offense, True)
+                    self.players[defender].on_defense = True
                     self.players[defender].court_position[0], self.players[defender].court_position[1] = new_position[0], new_position[1]
         self.update_player_pos()
         for player in self.players:
             player.has_ball = False
             if player.player_id == self.point_guards[team]:
                 player.has_ball = True
+                player.on_defense = False
+                ball.possession = True
+                ball.last_possession = player.player_id
+                ball.last_touch = player.player_id
         
         
     #this method is to set each players move_count for the turn
@@ -335,7 +342,8 @@ class Court:
                             #send the player into the defensive brain
                         else:
                             #send the player into the off_ball brain
-                        self.update_player_pos()    
+                        self.update_player_pos()
+                        current_player.move_count -= 1
                 turn_count -= 1
                 sequence.append(self.tk_frame())
                 if turn_count <= 0:
@@ -364,12 +372,12 @@ class Court:
             if shot_clock_violation == True or out_bounds == True or seconds == 600:
                 if shot_clock_violation == True or out_bounds == True;
                     for team in self.point_guards:
-                        if team != ball.team_id_possession:
+                        if team != self.players[ball.last_touch].team_id:
                             ball.team_id_possession = team
                             break
                 self.player_reset(ball)
             shot_clock_violation = False
-            out_bounds = 0
+            out_bounds = False
             ball.turnt_over = False
             while True:
                 self.game_second(ball, sequence)

@@ -78,6 +78,7 @@ class Player():
     post_up = False
     move_count = 0
     on_defense = False
+    def_focus = 0
     
     #----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     
@@ -102,15 +103,15 @@ class Player():
             self.court_position[1] = 0"""
             
     #This is the function to check if a defender steals the ball from the ball_handler        
-    def hand_check(self, opponent, ball):
+    def hand_check(self, opponent, ball, court):
         steal_check = random.randint(1,self.steal*2)
         grab_check = random.randint(1,40)
         if steal_check >= 15 + opponent.ball_handle:
             opponent.has_ball = False
+            ball.is_steal = True
             ball.last_touch = self.player_id
             if self.hands <= grab_check:
-                self.has_ball = True
-                ball.last_posession = self.player_id
+                ball.poss_change(self, court)
             else:
                 ball.bounce(2,opponent.court_position)
         
@@ -119,6 +120,7 @@ class Player():
     #first a 'pass' check from the player with the ball, to check for a good pass
     #then a 'hand' check to see if the receiver catches the ball
     def pass_ball(self, target, ball, court):
+        ball.picked_up_dribble = False
         fate_pass = random.randint(1,60)
         fate_catch = random.randint(1,60)
         self.has_ball = False
@@ -136,7 +138,7 @@ class Player():
         if tipped == False:
             ball.assitor = self.player_id
             if fate_pass <= self.passing:
-                target.has_ball = True
+                ball.poss_change(target, court)
                 ball.court_position[0] = target.court_position[0]
                 ball.court_position[1] = target.court_position[1]
             elif fate_pass >= 60 - (10-self.passing):
@@ -154,9 +156,9 @@ class Player():
                     ball.court_position[0], ball.court_position[1] = target.court_position[0], target.court_position[1]
                     ball.bounce(distance,target.court_position)
         else:
+            ball.is_steal = True
+            ball.last_touch = defender.player_id
             if defender.has_ball == True:
-                #this is a placeholder
-                ball.court_position = defender.court_position
                 ball.poss_change(defender, court)
             else:
                 distance -= defender.distance_between_players(self)
@@ -171,6 +173,7 @@ class Player():
     #true_modifier from the block_check function; 7/19: Updated the rebounding stuff and changed the layup range to utilize the distance_from_basket method
     def shoot(self, true_modifier, ball, court):
         if self.has_ball == True:
+            ball.picked_up_dribble = False
             court_modifier = 0
             if self.court_position[1] < 1:
                 court_modifier = 25
@@ -258,6 +261,8 @@ class Player():
         self.destination = self.on_ball_destination(offense_player, play_tight)
         
         self.move_to(ball, court)
+        court.update_player_pos()
+        self.def_cutoff(offense_player, ball, court)
         
         if self.distance_between_players(offense_player) < 2 and self.stealer == True:
             self.hand_check(offense_player, ball)
@@ -304,9 +309,6 @@ class Player():
         if fate < self.hands:
             if fate < self.hands/2:
                 self.has_ball = True
-            else:
-                #this is a placeholder for debugging puroposes
-                print 'The ball was tipped'
             return True
         else:
             return False
@@ -391,6 +393,8 @@ class Player():
 
         if self.has_ball == False:
             self.pick_up_ball(ball, court)
+        else:
+            ball.update_pos(self.court_position)
 
     def pick_up_ball(self, ball, court):
         pick_up = False
@@ -406,18 +410,27 @@ class Player():
             
     #This method takes the ball carrier's defender and runs his on_ball_d attribute against the ball carrier's ball_handle to determine if the
     #ball carrier will receive a 1 move advantage; This is from the perspective of the offensive player
-    def dribble_move(self, opponent):
+    def dribble_move_check(self, opponent):
         if self.distance_between_players(opponent) < 2:
-            check = random.randint(1, self.ball_handle) - (random.randint(1,opponent.onball_def) + 5)
+            check = random.randint(1, self.ball_handle) - random.randint(1,opponent.onball_def) 
             if check > 0:
                 return True
             else:
                 return False   
         else:
             return False
+            
+    #this method will check to see which player can be hit by a dribble move and adjust his move count to 0 if the dribble check passes; 
+    #effectively dropping his jock/putting him on skates.
+    def dribble_move(self, ball, court):
+        possible = court.players_between(ball, self.court_position)
+        if '1' in possible:
+            if self.dribble_move_check(court.players[possible['1']]) == True and court.players[possible['1']].def_focus == self.player_id and self.move_count >= court.players[possible['1']].move_count:
+                court.players[possible['1']].move_count = 0
+    
     #this method will determine if the player 'jumps' the offensive player successfully; this is from the perspective of the defender
-    def def_cutoff(self, opponent):
-        check = self.strength - opponent.strength
+    def def_cutoff_check(self, opponent):
+        check = self.strength + self.onball_d - opponent.strength - random.randint(1, opponent.ball_handle)
         if check >= 0:
             return True
         else:
@@ -431,6 +444,20 @@ class Player():
             return False
         else:
             return True
+            
+    #this method is to determine if a player can attempt a defensive cut-off of his opponent; if the initial check passes than a second check is attempted to determine if the
+    #dribble has be picked up; this can only be attempted if the offensive player has the ball. If the cut-off passes the focus' move_count is set to 0; effectively stone-walling
+    #and keeping him out of the defender's house.
+    def def_cutoff(self, focus, ball, court):
+        if focus.has_ball == True and self.move_count >= focus.move_count:
+            possible = court.players_between(ball, focus.court_position)
+            if '1' in possible:
+                if possible['1'] == self.player_id and self.distance_between_players(focus) < 2:
+                    if self.def_cutoff_check(focus) == True:
+                        focus.move_count = 0
+                        if focus.pick_up_dribble_check(self) == True:
+                            ball.picked_up_dribble = True
+                            
             
     #this method will take the player and the opponent to determine if the player successfully backs-down the defender; this is used while in post-up mode
     def back_down_check(self, opponent):
@@ -526,10 +553,6 @@ class Player():
                     self.move_to(ball, court)
                     speed_move = self.speed_post_check(opponent)
                     return speed_move
-                else:
-                    return "spot not open"
-        else:
-            print 'The players did not post-up.'
             
     #this method is for the chasing of the ball
     def chase_ball(self, ball, court):
@@ -544,8 +567,7 @@ class Player():
             self.destination[0] = self.court_position[0] + directions[command][0]
             self.destination[1] = self.court_position[1] + directions[command][1]
             self.move_to(ball, court)
-            if opponent != None:    
-                return self.dribble_move(opponent)
+            self.dribble_move(ball, court)
         elif command == 'post':
             if self.post_up == True:
                 return self.post_move(opponent, sub_command, ball, court)
@@ -561,15 +583,19 @@ class Player():
         elif command == 'pass':
             self.pass_ball(sub_command, ball, court)
             
-    #this method is the controller for the defensive actions
+    #this method is the controller for the defensive actions; it also sets which player the defender is focusing on, making them susceptible to dribble moves.
     def def_controller(self, command, opponent, ball, court, ball_handler=None):
         if command == 'off':
+            self.def_focus = opponent.player_id
             self.on_ball_d(opponent, ball, court)
         elif command == 'tight':
+            self.def_focus = opponent.player_id
             self.on_ball_d(opponent, ball, court, True)
         elif command == 'ball_off':
+            self.def_focus = ball_handler.player_id
             self.on_ball_d(ball_handler, ball, court)
         elif command == 'ball_tight':
+            self.def_focus = ball_handler.player_id
             self.on_ball_d(ball_handler, ball, court, True)
             
     #this method is the controller for the off_ball actions of a player
