@@ -39,7 +39,7 @@ class Court:
         return is_open
         
     #this method is for the sensory keys of the brains, specifically the 9 court positions. This takes a players court_position as the parameter/input.
-    def nine_court(self, spot):
+    def nine_court_key(self, spot):
         if spot[0] <= 1:
             if spot[1] <= 3:
                 return 1
@@ -105,13 +105,14 @@ class Court:
             
             
     #this method is to generate the passing sense key.
-    def pass_sense(self, player, receiver, ball):
+    def pass_key(self, player, receiver, ball):
         key = str(self.nine_court(player.court_position)) + str(self.nine_court(reiceiver.court_position))
         between = self.players_between(ball, receiver.court_position, player.court_position)
         between_bin = '0'
         for k,v in between.iteritems():
             if v.team_id != player.team_id:
                 between_bin = '1'
+                break
         key = key + between_bin
         return key
      

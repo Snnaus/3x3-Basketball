@@ -80,6 +80,54 @@ class Player():
     on_defense = False
     def_focus = 0
     
+    #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    
+    #The 'Brain'
+    
+    #these attributes are for the AI; they are collectively called the brain; the ledger 'remembers' the actions taken leading up to the end of a possession
+    #so after a possession the actions can be reinforced with the results; the actions list is the list of all possible actions the player can take off ball and keep
+    #this is to be used to populate new keys in the dictionaries.
+    keep_dict = {}
+    pass_dict = {}
+    shoot_dict = {}
+    defense_dict = {}
+    off_ball_dict = {}
+    ledger = []
+    actions = ['back', 'left', 'right', 'go_to_faceup', 'go_to_faceup']
+    for x in directions:
+        actions.append(x)
+    
+    #This method takes the sense input for passes and returns the expected value for that key; it also adds the key if the key is not present
+    def pass_value_retrieve(self, key):
+        if key not in self.pass_dict:
+            self.pass_dict[key] = (1,1)
+        return self.pass_dict[key][0]/self.pass_dict[key][1]
+    
+    #this method takes the sense input for shooting and returns the expected value for that key
+    def shoot_value_retrieve(self, key):
+        if key not in shoot_dict:
+            shoot_dict[key] = (1/1)
+        return self.shoot_dict[key][0]/self.shoot_dict[key][1]
+        
+    #this method takes the sense input for keep/drive ball and compares all the expected values; it returns the highest expected value and the action corresponding.
+    def keep_value_retrieve(self, key):
+        if key not in self.keep_dict:
+            start_value = {}
+            for action in self.actions:
+                start_value[action] = (1,1)
+            self.keep_dict[key] = start_value
+        
+        current_action = [0,0]
+        for k,v in self.keep_dict[key].iteritems:
+            x_value = v[0]/v[1]
+            if x_value > current_action[1]:
+                current_action[0], current_action[1] = k, x_value
+        return current_action
+        
+    #this is the offensive brain of the player; here is were the sense keys are generated, used to come up with a decision, and then sent to the controller.
+    def offense_brain(self, ball, court):
+        
+    
     #----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     
     #Play Functions
