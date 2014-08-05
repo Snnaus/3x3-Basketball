@@ -77,7 +77,7 @@ class Court:
                 return 9
     
     #this method is to create the proximity sensory key. It takes the players court_position as the input. This is for the offensive and off_ball controllers.
-    def proximity_key(self, player, ball, shot=False):
+    def proximity_key(self, player, ball, shot_clock, time, shot=False):
         key = ''
         key = key + str(self.nine_court(player.court_position))
         if shot == False:
@@ -90,7 +90,6 @@ class Court:
                     key = key + '1'
                 else:
                     key = key + '0'
-            return key
         else:
             for k,v in directions.iteritems():
                 test_position = [0,0]
@@ -101,11 +100,41 @@ class Court:
                     key = key + '1'
                 else:
                     key = key + '0'
-            return key
+        key = self.ball_key(player, ball, key)
+        key = self.time_key(shot_clock, time, key)
+        return key
             
+    
+    #this method is used to attach the time portion of the sense key
+    def time_key(self, shot_clock, time, key):
+        key_time = 0
+        if shot_clock < time:
+            key_time = shot_clock
+        else:
+            key_time = time
             
+        digit = '3'
+        if key_time <= 8:
+            digit = '2'
+        elif key_time <= 4:
+            digit = '1'
+        elif key_time <= 1:
+            digit = '0'
+            
+        return key + digit
+    
+    #this method looks to see if the the ball needs to be cleared and if the ball has been picked up; then attaches it to the key.
+    def ball_key(self, player, ball, key):
+        picked = '0'
+        clear = '0'
+        if ball.picked_up_dribble == True:
+            picked = '1'
+        if player.team_id == ball.team_id_possession:
+            clear = '1'
+        return key + clear + picked
+    
     #this method is to generate the passing sense key.
-    def pass_key(self, player, receiver, ball):
+    def pass_key(self, player, receiver, ball, shot_clock, time):
         key = str(self.nine_court(player.court_position)) + str(self.nine_court(reiceiver.court_position))
         between = self.players_between(ball, receiver.court_position, player.court_position)
         between_bin = '0'
@@ -114,11 +143,15 @@ class Court:
                 between_bin = '1'
                 break
         key = key + between_bin
+        key = self.ball_key(player, ball, key)
+        key = self.time_key(shot_clock, time, key)
         return key
      
     #this method is to generate the defensive sense key.
-    def def_sense(self, player, opponent, ball_car):
-        return str(self.nine_court(player.court_position)) + str(self.nine_court(opponent.court_position)) + str(self.nine_court(ball_car.court_position))
+    def def_key(self, player, opponent, ball_car, shot_clock, time):
+        key = str(self.nine_court(player.court_position)) + str(self.nine_court(opponent.court_position)) + str(self.nine_court(ball_car.court_position))
+        key = self.ball_key(player, ball, key)
+        return self.time_key(shot_clock, time, key)
         
     #This function takes two inputs relating to two positions on the court; it will then return the number or players between those two positions and the ids of the players;
     #this is used for the rebounding script, and potentially the tip pass function; the players id is stored in a dictionary, with the first key being the inside player and

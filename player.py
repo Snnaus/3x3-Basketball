@@ -79,6 +79,7 @@ class Player():
     move_count = 0
     on_defense = False
     def_focus = 0
+    self.post_defender = 0
     
     #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     
@@ -93,9 +94,10 @@ class Player():
     defense_dict = {}
     off_ball_dict = {}
     ledger = []
-    actions = ['back', 'left', 'right', 'go_to_faceup', 'go_to_faceup']
+    post_actions = ['back', 'left', 'right', 'go_to_faceup']
+    face_actions = ['go_to_post']
     for x in directions:
-        actions.append(x)
+        face_actions.append(x)
     
     #This method takes the sense input for passes and returns the expected value for that key; it also adds the key if the key is not present
     def pass_value_retrieve(self, key):
@@ -110,23 +112,86 @@ class Player():
         return self.shoot_dict[key][0]/self.shoot_dict[key][1]
         
     #this method takes the sense input for keep/drive ball and compares all the expected values; it returns the highest expected value and the action corresponding.
+    #[action, expected value]
     def keep_value_retrieve(self, key):
         if key not in self.keep_dict:
             start_value = {}
-            for action in self.actions:
+            for action in self.post_actions:
                 start_value[action] = (1,1)
+            for x in self.face_actions:
+                start_value[x] = (1,1)
             self.keep_dict[key] = start_value
         
         current_action = [0,0]
         for k,v in self.keep_dict[key].iteritems:
             x_value = v[0]/v[1]
-            if x_value > current_action[1]:
-                current_action[0], current_action[1] = k, x_value
+            if self.post_up == True and k in self.post_actions:
+                if current_action[1] > x_value:
+                    current_action[0], current_action[1] = k, x_value
+            elif self.post_up == False and k in self.face_actions:
+                if current_action[1] > x_value:
+                    current_action[0], current_action[1] = k, x_value
+                    
         return current_action
         
-    #this is the offensive brain of the player; here is were the sense keys are generated, used to come up with a decision, and then sent to the controller.
-    def offense_brain(self, ball, court):
+    #this method is to be used to take the pass_key of the players team-mates and return the highest expected value of the two. It returns the key, player_id of target, 
+    #and the expected value. [key, player_id, expected value]
+    def pass_expected_value(self, court, ball, shot_clock, time):
+        possible = []
+        for player in court.players;
+            if player.player_id != self.player_id and player.team_id == self.team_id:
+                #appends a list with the [sense_key, player_id]
+                possible.append([court.pass_key(self, player, ball, shot_clock, time), player.player_id])
         
+        best_opt = 0
+        for options in possible:
+            options.append(self.pass_value_retrieve(options[0]))
+            if best_opt == 0 or options[2] > best_opt[2]:
+                best_opt = options
+        return best_opt
+            
+        
+    #this is the offensive brain of the player; here is were the sense keys are generated, used to come up with a decision, and then sent to the controller.
+    def offense_brain(self, ball, court, shot_clock, time):
+        #[identifier, key, action(only for keep), expected value]
+        keep = ['keep',0,0,0]
+        passs = ['pass',0,0]
+        shoot = ['shoot',0,0]
+        #generating keys
+        keep[1] = court.proximity_key(self, ball, shot_clock, time)
+        shoot[1] = court.proximity_key(self, ball, shot_clock, time, True)
+        shoot[2] = self.shoot_value_retrieve(shoot[1])
+        
+        #here I am applying the pass and keep expected values to the comparative lists above.
+        keep_act = self.keep_value_retrieve(keep[1])
+        keep[2], keep[3] = keep_act[0], keep_act[1]
+        
+        pass_stuff = self.pass_expected_value(court, ball, shot_clock, time)
+        pass_target = pass_stuff[1]
+        passs[1], passs[2] = pass_stuff[0], pass_stuff[2]
+        
+        #here is where the program will compare the expected values of the actions and make a decision based on the highest expected value.
+        choice = shoot
+        expected = shoot[2]
+        if keep[3] > expected:
+            choice = keep
+            expected = keep[3]
+        if passs[2] > expected:
+            choice = passs
+        
+        #the decision is being sent to the controller
+        if choice[0] == 'keep':
+            if choice[2] != 'left' or choice[2] != 'back' or choice[2] != 'right'
+                self.off_controller(keep[2], ball, court)
+            else:
+                self.off_controller('post', ball, court, keep[2])
+            self.ledger.append((choice[0],choice[1],choice[2]))
+        elif choice[0] == 'pass':
+            self.off_controller('pass', ball, court, court.players[pass_target])
+            self.ledger.append((choice[0],choice[1]))
+        else:
+            self.off_controller('shoot', ball, court)
+            self.ledger.append((choice[0],choice[1]))
     
     #----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     
@@ -138,17 +203,6 @@ class Player():
     def move(self, direction):
         self.court_position[0] += directions[direction][0]
         self.court_position[1] += directions[direction][1]
-
-        #this is a hard coding of preventing the player from going out of bounds; I think the behaviour AI will take care of this   
-        """if self.court_position[0] > 11:
-            self.court_position[0] = 11
-        elif self.court_position[0] < 0:
-            self.court_position[0] = 0
-            
-        if self.court_position[1] > 14:
-            self.court_position[1] = 14
-        elif self.court_position[1] < 0:
-            self.court_position[1] = 0"""
             
     #This is the function to check if a defender steals the ball from the ball_handler        
     def hand_check(self, opponent, ball, court):
@@ -245,7 +299,6 @@ class Player():
                     #this is a placeholder text
                     print 'Layup made'
                 else:
-                    #this is a placeholder text
                     ball.rebound(court)
             else:
                 #Here is the place to put the jumpshot programming lines
@@ -256,7 +309,6 @@ class Player():
                         #this is a placeholder text
                         print "Jump Shot made"
                     else:
-                        #this is a placeholder text
                         ball.rebound(court, distance_from_basket)
                 else:
                     court_modifier += (7 * (distance_from_basket - 7))
@@ -265,7 +317,6 @@ class Player():
                         #this is a placeholder text
                         print "Made the Three"
                     else:
-                        #this is a placeholder text
                         ball.rebound(court, distance_from_basket)
                         
     #This function is to calculate the defensive_modifier against the player
@@ -580,15 +631,17 @@ class Player():
         self.face_up, self.post_up = self.post_up, self.face_up
         
     #this method checks if the opponent of the offense_player is within post up range to post-up
-    def go_post(self, opponent, ball, court):
+    def go_post(self, ball, court):
         _temp = court.players_between(ball, self.court_position)
         for k,v in _temp.iteritems():
-            if opponent.player_id == v and self.distance_between_players(opponent) < 2:
+            if court.players[v].def_focus == self.player_id and self.distance_between_players(court.players[v]) < 2:
+                self.post_defender = v
                 self.switch_up()
         
     #This method is to take the player, opponent, and a post direction (back, left, right) and process this into a movement; with a return
     #value on the speed post moves to determine mimicry.
-    def post_move(self, opponent, the_move, ball, court):
+    def post_move(self, the_move, ball, court):
+        opponent = court.players[self.post_defender]
         moves = self.post_possible(opponent)
         if moves != False:
             speed_move = False
@@ -610,7 +663,7 @@ class Player():
         
     #This method is the controller of the players action; that is to say the 'brain' will output a string which will then go into this method
     #where the corresponding action will be executed.
-    def off_controller(self, command, ball, court, opponent=None, sub_command=None):
+    def off_controller(self, command, ball, court, sub_command=None):
         if command in directions:
             self.destination[0] = self.court_position[0] + directions[command][0]
             self.destination[1] = self.court_position[1] + directions[command][1]
@@ -618,13 +671,13 @@ class Player():
             self.dribble_move(ball, court)
         elif command == 'post':
             if self.post_up == True:
-                return self.post_move(opponent, sub_command, ball, court)
+                return self.post_move(sub_command, ball, court)
         elif command == 'go_to_post':
             if self.post_up == False:
-                self.go_post(opponent, ball, court)
+                self.go_post(ball, court)
         elif command == 'go_to_faceup':
             if self.face_up == False:
-                self.switch_up
+                self.switch_up()
         elif command == 'shoot':
             defense = court.defense_modifier(self)
             self.shoot(defense, ball, court)
@@ -647,19 +700,20 @@ class Player():
             self.on_ball_d(ball_handler, ball, court, True)
             
     #this method is the controller for the off_ball actions of a player
-    def off_ball_controller(self, command, ball, court, opponent=None, sub_command=None):
+    def off_ball_controller(self, command, ball, court, sub_command=None):
         if command in directions:
             self.destination[0] = self.court_position[0] + directions[command][0]
             self.destination[1] = self.court_position[1] + directions[command][1]
             self.move_to(ball, court)
         elif command == 'post':
             if self.post_up == True:
-                return self.post_move(opponent, sub_command, ball, court)
+                return self.post_move(sub_command, ball, court)
         elif command == 'go_to_post':
             if self.post_up == False:
-                self.go_post(opponent, ball, court)
+                self.go_post(ball, court)
         elif command == 'go_to_faceup':
             if self.face_up == False:
+                self.post_defender = 0
                 self.switch_up
         
         
