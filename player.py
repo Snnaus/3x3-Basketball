@@ -114,6 +114,28 @@ class Player():
     #this method takes the sense input for keep/drive ball and compares all the expected values; it returns the highest expected value and the action corresponding.
     #[action, expected value]
     def keep_value_retrieve(self, key):
+        if key not in self.off_ball_dict:
+            start_value = {}
+            for action in self.post_actions:
+                start_value[action] = (1,1)
+            for x in self.face_actions:
+                start_value[x] = (1,1)
+            self.off_ball_dict[key] = start_value
+        
+        current_action = [0,0]
+        for k,v in self.off_ball_dict[key].iteritems:
+            x_value = v[0]/v[1]
+            if self.post_up == True and k in self.post_actions:
+                if current_action[1] > x_value:
+                    current_action[0], current_action[1] = k, x_value
+            elif self.post_up == False and k in self.face_actions:
+                if current_action[1] > x_value:
+                    current_action[0], current_action[1] = k, x_value
+                    
+        return current_action
+        
+    #this method is determine the the off_ball key value and actions
+    def off_ball_value_retrieve(self, key):
         if key not in self.keep_dict:
             start_value = {}
             for action in self.post_actions:
@@ -214,6 +236,18 @@ class Player():
                 
         self.def_controller(choice[0], opponent, ball, court, ball_car)
         self.ledger.append(['defense', choice[1], choice[0])
+        
+    #this is the off_ball brain; well you get it...
+    def off_ball_brain(self, ball, court, shot_clock, time):
+        the_key = cout.proximity_key(court, ball, shot_clock, time)
+        action = self.off_ball_value_retrieve(the_key)
+        if action[0] == 'back' or action[0] == 'left' or action[0] == 'right':
+            self.off_ball_controller('post', ball, court, action[0])
+        else:
+            self.off_ball_controller(action[0], ball, court)
+        self.ledger.append('off_ball', the_key, choice[0]) 
+            
+        
     
     #----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     
