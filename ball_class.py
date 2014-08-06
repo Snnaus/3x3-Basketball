@@ -98,12 +98,12 @@ class Ball:
     #It returns True if IT IS OUT OF BOUNDS.
     def out_of_bounds_check(self, position):
         if position[0] > 14 or position[1] > 11:
-            ball.is_steal = False
-            ball.is_rebound = False
+            self.is_steal = False
+            self.is_rebound = False
             return True
         elif position[0] < 0 or position[1] < 0:
-            ball.is_steal = False
-            ball.is_rebound = False
+            self.is_steal = False
+            self.is_rebound = False
             return True
         else:
             return False
@@ -128,7 +128,7 @@ class Ball:
         
         if self.box_out_range() == True and len(rebounders) > 0:
             #this is the external rebound function found in player.py file
-            rebound_script(rebounders, court)
+            rebound_script(rebounders, self, court)
             
     #this method switches the balls possession; 
     #it will also adjust the steal/rebound/turnover stats of the respective players (currently not implemented 7/27/2014)

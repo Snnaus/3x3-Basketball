@@ -1,5 +1,6 @@
 import random, math
 from tkinter_stuff import *
+from player import *
 
 
 
@@ -19,6 +20,9 @@ class Court:
     
     #this dictionary is for each teams respective point guard; the key will relate to the players team_id and the value will be the players id
     point_guards = {}
+    
+    #this attribute tells the game how many points the last possession generated.
+    points_last = 0
     
     #this is filling the dictionary with the position keys, AKA 'the board'; I had to make this bigger because of a keyerror when rebounds went out of bounds
     def __init__(self):
@@ -54,7 +58,7 @@ class Court:
                 return 6
             else:
                 return 9
-        elif spit[0] <= 9:
+        elif spot[0] <= 9:
             if spot[1] <= 3:
                 return 3
             elif spot[1] <= 8:
@@ -79,7 +83,7 @@ class Court:
     #this method is to create the proximity sensory key. It takes the players court_position as the input. This is for the offensive and off_ball controllers.
     def proximity_key(self, player, ball, shot_clock, time, shot=False):
         key = ''
-        key = key + str(self.nine_court(player.court_position))
+        key = key + str(self.nine_court_key(player.court_position))
         if shot == False:
             for k,v in directions.iteritems():
                 test_position = [0,0]
@@ -96,8 +100,17 @@ class Court:
                 test_position[0] = player.court_position[0] + v[0]
                 test_position[1] = player.court_position[1] + v[1]
                 digit = self.spot_open(test_position, ball)
-                if digit == True or player.team_id == self.players[self.positions[test_position[0],test_position[1]]].team_id:
-                    key = key + '1'
+                if (test_position[0], test_position[1]) in self.positions:
+                    if digit == True:
+                        key = key + '1'
+                    else:
+                        if self.positions[test_position[0],test_position[1]] != 0:
+                            if player.team_id == self.players[self.positions[test_position[0],test_position[1]]].team_id:
+                                key = key + '1'
+                            else:
+                                key = key + '0'
+                        else:
+                            key = key + '0'
                 else:
                     key = key + '0'
         key = self.ball_key(player, ball, key)
@@ -135,11 +148,11 @@ class Court:
     
     #this method is to generate the passing sense key.
     def pass_key(self, player, receiver, ball, shot_clock, time):
-        key = str(self.nine_court(player.court_position)) + str(self.nine_court(reiceiver.court_position))
+        key = str(self.nine_court_key(player.court_position)) + str(self.nine_court_key(receiver.court_position))
         between = self.players_between(ball, receiver.court_position, player.court_position)
         between_bin = '0'
         for k,v in between.iteritems():
-            if v.team_id != player.team_id:
+            if self.players[v].team_id != player.team_id:
                 between_bin = '1'
                 break
         key = key + between_bin
@@ -148,8 +161,8 @@ class Court:
         return key
      
     #this method is to generate the defensive sense key.
-    def def_key(self, player, opponent, ball_car, shot_clock, time):
-        key = str(self.nine_court(player.court_position)) + str(self.nine_court(opponent.court_position)) + str(self.nine_court(ball_car.court_position))
+    def def_key(self, player, opponent, ball, ball_car, shot_clock, time):
+        key = str(self.nine_court_key(player.court_position)) + str(self.nine_court_key(opponent.court_position)) + str(self.nine_court_key(ball_car.court_position))
         key = self.ball_key(player, ball, key)
         return self.time_key(shot_clock, time, key)
         
@@ -318,29 +331,30 @@ class Court:
         return map
         
     #this method is to reset the players to a default position during the game; only at the start of the game, after on floor fouls, and after out of bounds
-    def player_reset(self, ball):
+    def player_reset(self, ball, sequence):
         team = ball.team_id_possession
         one = self.players[self.point_guards[team]]
         two = 0
         three = 0
-        for player in self.players:
-            if player.team_id == team and two == 0:
+        for id,player in self.players.iteritems():
+            if player.team_id == team and two == 0 and player.player_id != one.player_id:
                 two = player
                 player.on_defense = False
-            elif player.team_id == team and three == 0:
+            elif player.team_id == team and three == 0 and player.player_id != one.player_id:
                 three = player
                 player.on_defense = False
                 break
         one.court_position, two.court_position, three.court_position = [7,9], [13,7], [1,7]
-        for teams in defense_pairs:
-            if teams != team:
-                defense = defense_pairs[teams]
-                for defender,offense in teams:
-                    new_position = defender.onball_destination(offense, True)
-                    self.players[defender].on_defense = True
-                    self.players[defender].court_position[0], self.players[defender].court_position[1] = new_position[0], new_position[1]
+        for id,teams in self.defense_pairs.iteritems():
+            if id != team:
+                defense = self.defense_pairs[id]
+                new_position = {}
+                for defender,offense in defense.iteritems():
+                    self.players[defender].court_position = self.players[defender].on_ball_destination(self.players[offense],False)
+        
         self.update_player_pos()
-        for player in self.players:
+        sequence.append(self.tk_frame())
+        for id,player in self.players.iteritems():
             player.has_ball = False
             if player.player_id == self.point_guards[team]:
                 player.has_ball = True
@@ -350,10 +364,11 @@ class Court:
                 ball.last_touch = player.player_id
         
         
+        
     #this method is to set each players move_count for the turn
     def set_move_count(self):
         highest = 0
-        for player in self.players:
+        for id,player in self.players.iteritems():
             player.move_count = round(player.speed/4)
             if player.move_count > highest:
                 highest = player.move_count
@@ -362,7 +377,7 @@ class Court:
             
     #this method is for the 'second' mechanic; a second (which represents the unit of time) is a bundle of turns by the players
     #this method executes those turns
-    def game_second(self, ball, sequence):
+    def game_second(self, ball, sequence, shot_clock, time):
         if ball.possession == False:
             for x in range(2):
                 self.loose_ball_chase(ball)
@@ -370,26 +385,26 @@ class Court:
             order = self.initiative_roll()
             turn_count = self.set_move_count()
             while True:
-                ball.clear_out_check(court)
+                ball.clear_out_check(self)
                 for x in range(1,7):
                     #this gate is to check if the player is fast enough the move at this turn.
                     if self.players[order[x]].move_count >= turn_count:
                         current_player = self.players[order[x]]
                         if current_player.has_ball == True:
-                            #Send the player into the the Offensive Brain
+                            current_player.offense_brain(ball, self, shot_clock, time)
                         elif current_player.on_defense == True:
-                            #send the player into the defensive brain
+                            current_player.defence_brain(ball, self, shot_clock, time)
                         else:
-                            #send the player into the off_ball brain
+                            current_player.off_ball_brain(ball, self, shot_clock, time)
                         self.update_player_pos()
                         current_player.move_count -= 1
-                turn_count -= 1
                 sequence.append(self.tk_frame())
+                turn_count -= 1
                 if turn_count <= 0:
                     break
                         
     #this is the game method; here where the game loop is found
-    def game(self, ball):
+    def game(self, ball, sequence):
         #the games last 10 mins(600 secs) with no half time
         seconds = 600
         #this is to determine the team who starts with the ball at the beginning of the game; simulates a coin flip
@@ -400,26 +415,29 @@ class Court:
                 ball.team_id_possession = team
             chance_count += 1
         
-        sequence = []
+        #sequence = []
         shot_clock_violation = False
         out_bounds = 0
         ball.turnt_over = False
         while True:
             #there is a 12 second shot clock
             shot_clock = 12
+            self.points_last = 0
             
             if shot_clock_violation == True or out_bounds == True or seconds == 600:
-                if shot_clock_violation == True or out_bounds == True;
+                if shot_clock_violation == True or out_bounds == True:
                     for team in self.point_guards:
                         if team != self.players[ball.last_touch].team_id:
                             ball.team_id_possession = team
                             break
-                self.player_reset(ball)
+                self.player_reset(ball, sequence)
             shot_clock_violation = False
             out_bounds = False
             ball.turnt_over = False
+            for id, player in self.players.iteritems():
+                player.ledger = []
             while True:
-                self.game_second(ball, sequence)
+                self.game_second(ball, sequence, shot_clock, seconds)
                 out_bounds = ball.out_of_bounds_check(ball.court_position)
                 shot_clock -= 1
                 seconds -= 1
@@ -428,6 +446,9 @@ class Court:
                     break
                 elif seconds <= 0 or ball.turnt_over == True or out_bounds == True:
                     break
+            for id,player in self.players.iteritems():
+                player.ledger_reader(self)
             if seconds <= 0:
                 break
-        animation = Court_Animation(sequence, self)   
+        print len(sequence)
+        #animation = Court_Animation(sequence, self)   

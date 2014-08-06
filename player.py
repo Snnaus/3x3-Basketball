@@ -79,7 +79,7 @@ class Player():
     move_count = 0
     on_defense = False
     def_focus = 0
-    self.post_defender = 0
+    post_defender = 0
     
     #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     
@@ -93,7 +93,7 @@ class Player():
     shoot_dict = {}
     defense_dict = {}
     off_ball_dict = {}
-    ledger = []
+    ledger = 0
     post_actions = ['back', 'left', 'right', 'go_to_faceup']
     face_actions = ['go_to_post']
     for x in directions:
@@ -107,35 +107,13 @@ class Player():
     
     #this method takes the sense input for shooting and returns the expected value for that key
     def shoot_value_retrieve(self, key):
-        if key not in shoot_dict:
-            shoot_dict[key] = (1/1)
+        if key not in self.shoot_dict:
+            self.shoot_dict[key] = (1,1)
         return self.shoot_dict[key][0]/self.shoot_dict[key][1]
         
     #this method takes the sense input for keep/drive ball and compares all the expected values; it returns the highest expected value and the action corresponding.
     #[action, expected value]
     def keep_value_retrieve(self, key):
-        if key not in self.off_ball_dict:
-            start_value = {}
-            for action in self.post_actions:
-                start_value[action] = (1,1)
-            for x in self.face_actions:
-                start_value[x] = (1,1)
-            self.off_ball_dict[key] = start_value
-        
-        current_action = [0,0]
-        for k,v in self.off_ball_dict[key].iteritems:
-            x_value = v[0]/v[1]
-            if self.post_up == True and k in self.post_actions:
-                if current_action[1] > x_value:
-                    current_action[0], current_action[1] = k, x_value
-            elif self.post_up == False and k in self.face_actions:
-                if current_action[1] > x_value:
-                    current_action[0], current_action[1] = k, x_value
-                    
-        return current_action
-        
-    #this method is determine the the off_ball key value and actions
-    def off_ball_value_retrieve(self, key):
         if key not in self.keep_dict:
             start_value = {}
             for action in self.post_actions:
@@ -145,22 +123,44 @@ class Player():
             self.keep_dict[key] = start_value
         
         current_action = [0,0]
-        for k,v in self.keep_dict[key].iteritems:
-            x_value = v[0]/v[1]
+        for k,v in self.keep_dict[key].iteritems():
+            x_value = float(v[0])/float(v[1])
             if self.post_up == True and k in self.post_actions:
-                if current_action[1] > x_value:
+                if current_action[1] < x_value:
                     current_action[0], current_action[1] = k, x_value
             elif self.post_up == False and k in self.face_actions:
-                if current_action[1] > x_value:
+                if current_action[1] < x_value:
                     current_action[0], current_action[1] = k, x_value
-                    
+        
+        return current_action
+        
+    #this method is determine the the off_ball key value and actions
+    def off_ball_value_retrieve(self, key):
+        if key not in self.off_ball_dict:
+            start_value = {}
+            for action in self.post_actions:
+                start_value[action] = (1,1)
+            for x in self.face_actions:
+                start_value[x] = (1,1)
+            self.off_ball_dict[key] = start_value
+        
+        current_action = [0,0]
+        for k,v in self.off_ball_dict[key].iteritems():
+            x_value = float(v[0])/float(v[1])
+            if self.post_up == True and k in self.post_actions:
+                if current_action[1] < x_value:
+                    current_action[0], current_action[1] = k, x_value
+            elif self.post_up == False and k in self.face_actions:
+                if current_action[1] < x_value:
+                    current_action[0], current_action[1] = k, x_value
+        
         return current_action
         
     #this method is to be used to take the pass_key of the players team-mates and return the highest expected value of the two. It returns the key, player_id of target, 
     #and the expected value. [key, player_id, expected value]
     def pass_expected_value(self, court, ball, shot_clock, time):
         possible = []
-        for player in court.players;
+        for id,player in court.players.iteritems():
             if player.player_id != self.player_id and player.team_id == self.team_id:
                 #appends a list with the [sense_key, player_id]
                 possible.append([court.pass_key(self, player, ball, shot_clock, time), player.player_id])
@@ -193,17 +193,17 @@ class Player():
         passs[1], passs[2] = pass_stuff[0], pass_stuff[2]
         
         #here is where the program will compare the expected values of the actions and make a decision based on the highest expected value.
-        choice = shoot
-        expected = shoot[2]
-        if keep[3] > expected:
-            choice = keep
-            expected = keep[3]
+        choice = keep
+        expected = keep[3]
         if passs[2] > expected:
             choice = passs
+            expected = passs[2]
+        if shoot[2] > expected and ball.team_id_possession == self.team_id:
+            choice = shoot
         
         #the decision is being sent to the controller
         if choice[0] == 'keep':
-            if choice[2] != 'left' or choice[2] != 'back' or choice[2] != 'right'
+            if choice[2] != 'left' or choice[2] != 'back' or choice[2] != 'right':
                 self.off_controller(keep[2], ball, court)
             else:
                 self.off_controller('post', ball, court, keep[2])
@@ -219,7 +219,7 @@ class Player():
     def defence_brain(self, ball, court, shot_clock, time):
         opponent = court.players[court.defense_pairs[self.team_id][self.player_id]]
         ball_car = court.players[ball.last_possession]
-        key = court.def_key(self, opponent, ball_car, shot_clock, time)
+        key = court.def_key(self, opponent, ball, ball_car, shot_clock, time)
         if key not in self.defense_dict:
             self.defense_dict[key] = {
                 'off':(1,1),
@@ -230,22 +230,44 @@ class Player():
                 
         choice = [0,key,0]
         for key,value in self.defense_dict[key].iteritems():
-            x_value = value[0]/value[1]
+            x_value = float(value[0])/float(value[1])
             if choice[2] == 0 or x_value < choice[2]:
                 choice[0], choice[2] = key, x_value
                 
         self.def_controller(choice[0], opponent, ball, court, ball_car)
-        self.ledger.append(['defense', choice[1], choice[0])
+        self.ledger.append(['defense', choice[1], choice[0]])
         
     #this is the off_ball brain; well you get it...
     def off_ball_brain(self, ball, court, shot_clock, time):
-        the_key = cout.proximity_key(court, ball, shot_clock, time)
+        the_key = court.proximity_key(self, ball, shot_clock, time)
         action = self.off_ball_value_retrieve(the_key)
         if action[0] == 'back' or action[0] == 'left' or action[0] == 'right':
             self.off_ball_controller('post', ball, court, action[0])
         else:
             self.off_ball_controller(action[0], ball, court)
-        self.ledger.append('off_ball', the_key, choice[0]) 
+        self.ledger.append(['off_ball', the_key, action[0]])
+
+    #this method is used to take the player's 'ledger' and adds the plays result to the corresponding dictionaries
+    def ledger_reader(self, court):
+        for event in self.ledger:
+            key = event[1]
+            new = [0,0]
+            if event[0] == 'shoot':
+                new[0], new[1] = self.shoot_dict[key][0] + court.points_last, self.shoot_dict[key][1] + 1
+                self.shoot_dict[key] = (int(new[0]),int(new[1]))
+            elif event[0] == 'pass':
+                new[0], new[1] = self.pass_dict[key][0] + court.points_last, self.pass_dict[key][1] + 1
+                self.pass_dict[key] = (int(new[0]),int(new[1]))
+            elif event[0] == 'defense':
+                new[0], new[1] = self.defense_dict[key][event[2]][0] + court.points_last, self.defense_dict[key][event[2]][1] + 1
+                self.defense_dict[key][event[2]] = (int(new[0]),int(new[1]))
+            elif event[0] == 'off_ball':
+                new[0], new[1] = self.off_ball_dict[key][event[2]][0] + court.points_last, self.off_ball_dict[key][event[2]][1] + 1
+                self.off_ball_dict[key][event[2]] = (int(new[0]),int(new[1]))
+            elif event[0] == 'keep':
+                new[0], new[1] = self.keep_dict[key][event[2]][0] + court.points_last, self.keep_dict[key][event[2]][1] + 1
+                self.keep_dict[key][event[2]] = (int(new[0]),int(new[1]))
+            self.ledger = 0
             
         
     
@@ -354,6 +376,7 @@ class Player():
                 if shot_fate <= 50 + layup_percent - true_modifier:
                     #this is a placeholder text
                     print 'Layup made'
+                    court.points_last = 1
                 else:
                     ball.rebound(court)
             else:
@@ -364,6 +387,7 @@ class Player():
                     if shot_fate <= 40 + self.jump_shooting - court_modifier - true_modifier:
                         #this is a placeholder text
                         print "Jump Shot made"
+                        court.points_last = 1
                     else:
                         ball.rebound(court, distance_from_basket)
                 else:
@@ -372,6 +396,7 @@ class Player():
                     if shot_fate <= 25 + self.jump_shooting + self.three_modifier - court_modifier - true_modifier:
                         #this is a placeholder text
                         print "Made the Three"
+                        court.points_last = 2
                     else:
                         ball.rebound(court, distance_from_basket)
                         
@@ -786,7 +811,7 @@ class Player():
 #rebound zone, i.e. near the basket; if they are it proceeds through the box-out function
 #and compares the two rebound_jumps to determine which player comes out with the ball;
 #this is the first appearance of the players global dictionary in the game 7/16/2014
-def rebound_script(rebounders, court):
+def rebound_script(rebounders, ball, court):
     insidepl = court.players[rebounders[1]]
     outsidepl = False
     if 2 in rebounders:
