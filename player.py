@@ -192,6 +192,28 @@ class Player():
         else:
             self.off_controller('shoot', ball, court)
             self.ledger.append((choice[0],choice[1]))
+            
+    #this is the defensive brain of the player; here the keys are generated, decisions made, and sent to the controller
+    def defence_brain(self, ball, court, shot_clock, time):
+        opponent = court.players[court.defense_pairs[self.team_id][self.player_id]]
+        ball_car = court.players[ball.last_possession]
+        key = court.def_key(self, opponent, ball_car, shot_clock, time)
+        if key not in self.defense_dict:
+            self.defense_dict[key] = {
+                'off':(1,1),
+                'tight': (1,1),
+                'off_ball': (1,1),
+                'tight_ball': (1,1)
+                }
+                
+        choice = [0,key,0]
+        for key,value in self.defense_dict[key].iteritems():
+            x_value = value[0]/value[1]
+            if choice[2] == 0 or x_value < choice[2]:
+                choice[0], choice[2] = key, x_value
+                
+        self.def_controller(choice[0], opponent, ball, court, ball_car)
+        self.ledger.append(['defense', choice[1], choice[0])
     
     #----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     
