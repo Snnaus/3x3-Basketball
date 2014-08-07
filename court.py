@@ -23,6 +23,7 @@ class Court:
     
     #this attribute tells the game how many points the last possession generated.
     points_last = 0
+    score = 0
     
     #this is filling the dictionary with the position keys, AKA 'the board'; I had to make this bigger because of a keyerror when rebounds went out of bounds
     def __init__(self):
@@ -64,21 +65,21 @@ class Court:
             elif spot[1] <= 8:
                 return 7
             else:
-                return 9
+                return 'A'
         elif spot[0] <= 12:
             if spot[1] <= 3:
                 return 4
             elif spot[1] <= 8:
                 return 8
             else:
-                return 9
+                return 'B'
         elif spot[0] <= 14:
             if spot[1] <= 3:
                 return 5
             elif spot[1] <= 8:
                 return 8
             else:
-                return 9
+                return 'B'
     
     #this method is to create the proximity sensory key. It takes the players court_position as the input. This is for the offensive and off_ball controllers.
     def proximity_key(self, player, ball, shot_clock, time, shot=False):
@@ -145,6 +146,17 @@ class Court:
         if player.team_id == ball.team_id_possession:
             clear = '1'
         return key + clear + picked
+        
+    #this is a test for the off_ball brain key.
+    def off_key(self, player, ball, shot_clock, time):
+        key = ''
+        for id, dude in self.players.iteritems():
+            if player.team_id != dude.team_id:
+                key = key + str(self.nine_court_key(dude.court_position))
+        key = key + str(self.nine_court_key(player.court_position))
+        key = self.ball_key(player, ball, key)
+        key = self.time_key(shot_clock, time, key)
+        return key
     
     #this method is to generate the passing sense key.
     def pass_key(self, player, receiver, ball, shot_clock, time):
@@ -405,8 +417,9 @@ class Court:
                         
     #this is the game method; here where the game loop is found
     def game(self, ball, sequence):
+        self.score = 0
         #the games last 10 mins(600 secs) with no half time
-        seconds = 600
+        seconds = 1200
         #this is to determine the team who starts with the ball at the beginning of the game; simulates a coin flip
         chance = random.randint(1,100)
         chance_count = 0
@@ -423,8 +436,9 @@ class Court:
             #there is a 12 second shot clock
             shot_clock = 12
             self.points_last = 0
+            ball.shot_att = False
             
-            if shot_clock_violation == True or out_bounds == True or seconds == 600:
+            if shot_clock_violation == True or out_bounds == True or seconds == 1200:
                 if shot_clock_violation == True or out_bounds == True:
                     for team in self.point_guards:
                         if team != self.players[ball.last_touch].team_id:
@@ -448,6 +462,7 @@ class Court:
                     break
             for id,player in self.players.iteritems():
                 player.ledger_reader(self)
+                self.score += self.points_last
             if seconds <= 0:
                 break
         print len(sequence)

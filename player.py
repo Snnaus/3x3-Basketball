@@ -27,7 +27,7 @@ class Player():
     #biographical
     first_name = ""
     last_name = ""
-    height = 0
+    height = 10
     
     #personality
     ballhog =True
@@ -36,28 +36,28 @@ class Player():
     patient = False
     
     #physical skills of the player
-    speed = 0
-    jump = 0
-    stamina = 0
-    strength = 0
-    rebound = 0
-    hands = 0
+    speed = 10
+    jump = 10
+    stamina = 10
+    strength = 10
+    rebound = 10
+    hands = 10
     
     #offensive skills
-    layup = 0
+    layup = 10
     dunk = False
-    jump_shooting = 0
-    three_modifier = 0
-    ball_handle = 0
-    passing = 0
-    shooting_traffic = 0
-    post_skill = 0
+    jump_shooting = 10
+    three_modifier = 10
+    ball_handle = 10
+    passing = 10
+    shooting_traffic = 10
+    post_skill = 10
     
     #defensive skills
-    onball_def = 0
-    post_def = 0
-    steal = 0
-    block = 0
+    onball_def = 10
+    post_def = 10
+    steal = 10
+    block = 10
     
     #playstyle
     stealer = False
@@ -239,7 +239,7 @@ class Player():
         
     #this is the off_ball brain; well you get it...
     def off_ball_brain(self, ball, court, shot_clock, time):
-        the_key = court.proximity_key(self, ball, shot_clock, time)
+        the_key = court.off_key(self, ball, shot_clock, time)
         action = self.off_ball_value_retrieve(the_key)
         if action[0] == 'back' or action[0] == 'left' or action[0] == 'right':
             self.off_ball_controller('post', ball, court, action[0])
@@ -300,6 +300,7 @@ class Player():
     #first a 'pass' check from the player with the ball, to check for a good pass
     #then a 'hand' check to see if the receiver catches the ball
     def pass_ball(self, target, ball, court):
+        #print 'Pass attempted'
         ball.picked_up_dribble = False
         fate_pass = random.randint(1,60)
         fate_catch = random.randint(1,60)
@@ -317,24 +318,27 @@ class Player():
         distance = self.distance_between_players(target)
         if tipped == False:
             ball.assitor = self.player_id
-            if fate_pass <= self.passing:
+            if fate_pass <= 50 + self.passing/4 + target.hands/4:
                 ball.poss_change(target, court)
                 ball.court_position[0] = target.court_position[0]
                 ball.court_position[1] = target.court_position[1]
-            elif fate_pass >= 60 - (10-self.passing):
+                #print 'Pass made'
+            else:
                 #this is for a wayward pass, hence why the focal point is on the passer; this could cause some crazy passes like 15 blocks backwards
                 ball.destination[0], ball.destination[1] = self.court_position[0], self.court_position[1]
                 ball.court_position[0], ball.court_position[1] = self.court_position[0], self.court_position[1]
                 ball.bounce(distance*2,self.court_position)
+            '''fate_pass >= 60 - (10-self.passing)
             else:
-                if fate_catch < target.hands*2:
-                    target.has_ball = True
+                if fate_catch < target.hands*3:
+                    ball.poss_change(target, court)
                     ball.court_position[0] = target.court_position[0]
                     ball.court_position[1] = target.court_position[1]
+                    print 'Pass made'
                 else:
                     ball.destination[0], ball.destination[1] = target.court_position[0], target.court_position[1]
                     ball.court_position[0], ball.court_position[1] = target.court_position[0], target.court_position[1]
-                    ball.bounce(distance,target.court_position)
+                    ball.bounce(distance,target.court_position)'''
         else:
             ball.is_steal = True
             ball.last_touch = defender.player_id
@@ -353,6 +357,7 @@ class Player():
     #true_modifier from the block_check function; 7/19: Updated the rebounding stuff and changed the layup range to utilize the distance_from_basket method
     def shoot(self, true_modifier, ball, court):
         if self.has_ball == True:
+            ball.shot_att = True
             ball.picked_up_dribble = False
             court_modifier = 0
             if self.court_position[1] < 1:
@@ -373,7 +378,7 @@ class Player():
             self.has_ball = False
             if in_layup == True:
                 shot_fate = random.randint(1,100)
-                if shot_fate <= 50 + layup_percent - true_modifier:
+                if shot_fate <= 70 + layup_percent - true_modifier:
                     #this is a placeholder text
                     print 'Layup made'
                     court.points_last = 1
@@ -384,7 +389,7 @@ class Player():
                 distance_from_basket = self.distance_from_basket()
                 if distance_from_basket < 6:
                     shot_fate = random.randint(1,100)
-                    if shot_fate <= 40 + self.jump_shooting - court_modifier - true_modifier:
+                    if shot_fate <= 50 + self.jump_shooting - court_modifier - true_modifier:
                         #this is a placeholder text
                         print "Jump Shot made"
                         court.points_last = 1
@@ -393,7 +398,7 @@ class Player():
                 else:
                     court_modifier += (7 * (distance_from_basket - 7))
                     shot_fate = random.randint(1,100)
-                    if shot_fate <= 25 + self.jump_shooting + self.three_modifier - court_modifier - true_modifier:
+                    if shot_fate <= 10 + self.jump_shooting + self.three_modifier - court_modifier - true_modifier:
                         #this is a placeholder text
                         print "Made the Three"
                         court.points_last = 2
@@ -408,9 +413,7 @@ class Player():
     def defense_jump(self, opponent):
         defense_modifier = 0
         distance = self.distance_between_players(opponent)
-        if 2 <= distance and distance < 3:
-            defense_modifier = self.height/2 + random.randint(0,self.jump/2)
-        elif distance < 2:
+        if distance < 2:
             defense_modifier = self.height + random.randint(0, self.jump)
             
         return defense_modifier
@@ -485,7 +488,7 @@ class Player():
     #this is a function to see if a player is in-between a player passing the ball
     #to another; if he is he attempts to tip the ball away
     def tip_pass(self):
-        fate = random.randint(0,40)
+        fate = random.randint(0,100)
         if fate < self.hands:
             if fate < self.hands/2:
                 self.has_ball = True
@@ -606,7 +609,7 @@ class Player():
         possible = court.players_between(ball, self.court_position)
         if '1' in possible:
             if self.dribble_move_check(court.players[possible['1']]) == True and court.players[possible['1']].def_focus == self.player_id and self.move_count >= court.players[possible['1']].move_count:
-                court.players[possible['1']].move_count = 0
+                court.players[possible['1']].move_count -= 1
     
     #this method will determine if the player 'jumps' the offensive player successfully; this is from the perspective of the defender
     def def_cutoff_check(self, opponent):
@@ -620,7 +623,7 @@ class Player():
     #the perspective of the offensive player
     def pick_up_dribble_check(self, opponent):
         check = self.strength - opponent.strength - (10 - random.randint(0, self.ball_handle))
-        if check > 0:
+        if check >= 0:
             return False
         else:
             return True
@@ -634,7 +637,7 @@ class Player():
             if '1' in possible:
                 if possible['1'] == self.player_id and self.distance_between_players(focus) < 2:
                     if self.def_cutoff_check(focus) == True:
-                        focus.move_count = 0
+                        focus.move_count -= 1
                         if focus.pick_up_dribble_check(self) == True:
                             ball.picked_up_dribble = True
                             
