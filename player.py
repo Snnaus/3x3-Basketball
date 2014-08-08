@@ -123,7 +123,7 @@ class Player():
                 start_value[x] = (1.0,1.0)
             self.keep_dict[key] = start_value
         
-        current_action = [0,0]
+        current_action = [0,-10000]
         for k,v in self.keep_dict[key].iteritems():
             x_value = v[0]
             if self.post_up == True and k in self.post_actions:
@@ -145,7 +145,7 @@ class Player():
                 start_value[x] = (1.0,1.0)
             self.off_ball_dict[key] = start_value
         
-        current_action = [0,0]
+        current_action = [0,-10000]
         for k,v in self.off_ball_dict[key].iteritems():
             x_value = v[0]
             if self.post_up == True and k in self.post_actions:
@@ -218,15 +218,13 @@ class Player():
             
     #this is the defensive brain of the player; here the keys are generated, decisions made, and sent to the controller
     def defence_brain(self, ball, court, shot_clock, time):
-        opponent = court.players[court.defense_pairs[self.team_id][self.player_id]]
+        opponent = court.players[court.defense_pairs[self.player_id]]
         ball_car = court.players[ball.last_possession]
         key = court.def_key(self, opponent, ball, ball_car, shot_clock, time)
         if key not in self.defense_dict:
             self.defense_dict[key] = {
                 'off':(1.0,1.0),
-                'tight': (1.0,1.0),
-                'off_ball': (1.0,1.0),
-                'tight_ball': (1.0,1.0)
+                'tight': (1.0,1.0)
                 }
                 
         choice = [0,key,0]
@@ -321,7 +319,7 @@ class Player():
     def hand_check(self, opponent, ball, court):
         steal_check = random.randint(1,self.steal*2)
         grab_check = random.randint(1,100)
-        if steal_check >= 10 + opponent.ball_handle:
+        if steal_check >= opponent.ball_handle:
             opponent.has_ball = False
             ball.is_steal = True
             ball.last_touch = self.player_id
@@ -335,7 +333,7 @@ class Player():
     #first a 'pass' check from the player with the ball, to check for a good pass
     #then a 'hand' check to see if the receiver catches the ball
     def pass_ball(self, target, ball, court):
-        print 'Pass attempted'
+        #print 'Pass attempted'
         ball.picked_up_dribble = False
         fate_pass = random.randint(1,60)
         fate_catch = random.randint(1,60)
@@ -357,7 +355,7 @@ class Player():
                 ball.poss_change(target, court)
                 ball.court_position[0] = target.court_position[0]
                 ball.court_position[1] = target.court_position[1]
-                print 'Pass made'
+                #print 'Pass made'
             else:
                 #this is for a wayward pass, hence why the focal point is on the passer; this could cause some crazy passes like 15 blocks backwards
                 ball.destination[0], ball.destination[1] = self.court_position[0], self.court_position[1]
@@ -415,11 +413,10 @@ class Player():
                 shot_fate = random.randint(1,100)
                 if shot_fate <= 60 + layup_percent - true_modifier:
                     #this is a placeholder text
-                    print 'Layup made'
+                    #print 'Layup made'
                     court.points_last = 1
                 else:
                     ball.rebound(court)
-                    print 'dude'
             else:
                 #Here is the place to put the jumpshot programming lines
                 distance_from_basket = self.distance_from_basket()
@@ -427,18 +424,17 @@ class Player():
                     shot_fate = random.randint(1,100)
                     if shot_fate <= 40 + self.jump_shooting - court_modifier - true_modifier:
                         #this is a placeholder text
-                        print "Jump Shot made"
+                        #print "Jump Shot made"
                         court.points_last = 1
                     else:
                         ball.rebound(court, distance_from_basket)
-                        print 'dude'
                 else:
                     court_modifier += (7 * (distance_from_basket - 7))
                     shot_fate = random.randint(1,100)
                     if shot_fate <= 5 + (self.jump_shooting/4) + self.three_modifier - court_modifier - true_modifier:
                         #this is a placeholder text
-                        print "Made the Three"
-                        court.points_last = 1
+                        #print "Made the Three"
+                        court.points_last = 2
                     else:
                         ball.rebound(court, distance_from_basket)
                         

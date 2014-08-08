@@ -290,7 +290,7 @@ class Court:
         for k,v in self.players.iteritems():
             if the_num < 1000 and v.team_id != shooter.team_id:
                 the_num += v.block_check(shooter)
-        
+                
         return the_num
         
         
@@ -357,12 +357,9 @@ class Court:
                 player.on_defense = False
                 break
         one.court_position, two.court_position, three.court_position = [7,9], [13,7], [1,7]
-        for id,teams in self.defense_pairs.iteritems():
-            if id != team:
-                defense = self.defense_pairs[id]
-                new_position = {}
-                for defender,offense in defense.iteritems():
-                    self.players[defender].court_position = self.players[defender].on_ball_destination(self.players[offense],True)
+        
+        for defender,offense in self.defense_pairs.iteritems():
+            self.players[defender].court_position = self.players[defender].on_ball_destination(self.players[offense],True)
         
         self.update_player_pos()
         sequence.append(self.tk_frame())
@@ -423,8 +420,6 @@ class Court:
         #this is to determine the team who starts with the ball at the beginning of the game; simulates a coin flip
         chance = random.randint(1,100)
         chance_count = 0
-        for id,player in self.players.iteritems():
-            player.brain_reset()
         for team in self.point_guards:
             if chance <= 50 + (chance_count*50):
                 ball.team_id_possession = team
@@ -434,14 +429,15 @@ class Court:
         shot_clock_violation = False
         out_bounds = 0
         ball.turnt_over = False
+        shot_made = False
         while True:
             #there is a 12 second shot clock
             shot_clock = 12
             self.points_last = 0
             ball.shot_att = False
             
-            if shot_clock_violation == True or out_bounds == True or seconds == 600:
-                if shot_clock_violation == True or out_bounds == True:
+            if shot_clock_violation == True or out_bounds == True or seconds == 600 or shot_made == True:
+                if shot_clock_violation == True or out_bounds == True or shot_made == True:
                     for team in self.point_guards:
                         if team != self.players[ball.last_touch].team_id:
                             ball.team_id_possession = team
@@ -450,6 +446,7 @@ class Court:
             shot_clock_violation = False
             out_bounds = False
             ball.turnt_over = False
+            shot_made = False
             for id, player in self.players.iteritems():
                 player.ledger = []
             while True:
@@ -457,14 +454,21 @@ class Court:
                 out_bounds = ball.out_of_bounds_check(ball.court_position)
                 shot_clock -= 1
                 seconds -= 1
+                if self.points_last > 0:
+                    shot_made = True
+                    break
                 if shot_clock <= 0:
+                    self.points_last = -2
                     shot_clock_violation = True
                     break
                 elif seconds <= 0 or ball.turnt_over == True or out_bounds == True:
+                    if out_bounds == True:
+                        self.points_last = -2
                     break
             for id,player in self.players.iteritems():
                 player.ledger_reader(self)
-            self.score += self.points_last
+            if self.points_last >= 0:
+                self.score += self.points_last
             if seconds <= 0:
                 break
         print len(sequence)
