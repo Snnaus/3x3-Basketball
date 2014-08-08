@@ -36,28 +36,28 @@ class Player():
     patient = False
     
     #physical skills of the player
-    speed = 10
-    jump = 10
-    stamina = 10
-    strength = 10
-    rebound = 10
-    hands = 10
+    speed = 5
+    jump = 5
+    stamina = 5
+    strength = 5
+    rebound = 5
+    hands = 5
     
     #offensive skills
-    layup = 10
+    layup = 5
     dunk = False
-    jump_shooting = 10
-    three_modifier = 10
-    ball_handle = 10
-    passing = 10
-    shooting_traffic = 10
-    post_skill = 10
+    jump_shooting = 5
+    three_modifier = 5
+    ball_handle = 5
+    passing = 5
+    shooting_traffic = 5
+    post_skill = 5
     
     #defensive skills
-    onball_def = 10
-    post_def = 10
-    steal = 10
-    block = 10
+    onball_def = 5
+    post_def = 5
+    steal = 5
+    block = 5
     
     #playstyle
     stealer = False
@@ -102,14 +102,15 @@ class Player():
     #This method takes the sense input for passes and returns the expected value for that key; it also adds the key if the key is not present
     def pass_value_retrieve(self, key):
         if key not in self.pass_dict:
-            self.pass_dict[key] = (1,1)
-        return self.pass_dict[key][0]/self.pass_dict[key][1]
+            self.pass_dict[key] = (1.0,1.0)
+            
+        return self.pass_dict[key][0]
     
     #this method takes the sense input for shooting and returns the expected value for that key
     def shoot_value_retrieve(self, key):
         if key not in self.shoot_dict:
-            self.shoot_dict[key] = (1,1)
-        return self.shoot_dict[key][0]/self.shoot_dict[key][1]
+            self.shoot_dict[key] = (1.0,1.0)
+        return self.shoot_dict[key][0]
         
     #this method takes the sense input for keep/drive ball and compares all the expected values; it returns the highest expected value and the action corresponding.
     #[action, expected value]
@@ -117,14 +118,14 @@ class Player():
         if key not in self.keep_dict:
             start_value = {}
             for action in self.post_actions:
-                start_value[action] = (1,1)
+                start_value[action] = (1.0,1.0)
             for x in self.face_actions:
-                start_value[x] = (1,1)
+                start_value[x] = (1.0,1.0)
             self.keep_dict[key] = start_value
         
         current_action = [0,0]
         for k,v in self.keep_dict[key].iteritems():
-            x_value = float(v[0])/float(v[1])
+            x_value = v[0]
             if self.post_up == True and k in self.post_actions:
                 if current_action[1] < x_value:
                     current_action[0], current_action[1] = k, x_value
@@ -139,14 +140,14 @@ class Player():
         if key not in self.off_ball_dict:
             start_value = {}
             for action in self.post_actions:
-                start_value[action] = (1,1)
+                start_value[action] = (1.0,1.0)
             for x in self.face_actions:
-                start_value[x] = (1,1)
+                start_value[x] = (1.0,1.0)
             self.off_ball_dict[key] = start_value
         
         current_action = [0,0]
         for k,v in self.off_ball_dict[key].iteritems():
-            x_value = float(v[0])/float(v[1])
+            x_value = v[0]
             if self.post_up == True and k in self.post_actions:
                 if current_action[1] < x_value:
                     current_action[0], current_action[1] = k, x_value
@@ -222,10 +223,10 @@ class Player():
         key = court.def_key(self, opponent, ball, ball_car, shot_clock, time)
         if key not in self.defense_dict:
             self.defense_dict[key] = {
-                'off':(1,1),
-                'tight': (1,1),
-                'off_ball': (1,1),
-                'tight_ball': (1,1)
+                'off':(1.0,1.0),
+                'tight': (1.0,1.0),
+                'off_ball': (1.0,1.0),
+                'tight_ball': (1.0,1.0)
                 }
                 
         choice = [0,key,0]
@@ -253,21 +254,59 @@ class Player():
             key = event[1]
             new = [0,0]
             if event[0] == 'shoot':
-                new[0], new[1] = self.shoot_dict[key][0] + court.points_last, self.shoot_dict[key][1] + 1
-                self.shoot_dict[key] = (int(new[0]),int(new[1]))
+                expec_tot = self.shoot_dict[key][0] * self.shoot_dict[key][1]
+                new[0], new[1] = expec_tot + court.points_last, self.shoot_dict[key][1] + 1
+                new[0] = float(new[0]/new[1])
+                self.shoot_dict[key] = (float(new[0]),int(new[1]))
             elif event[0] == 'pass':
-                new[0], new[1] = self.pass_dict[key][0] + court.points_last, self.pass_dict[key][1] + 1
-                self.pass_dict[key] = (int(new[0]),int(new[1]))
+                expec_tot = self.pass_dict[key][0] * self.pass_dict[key][1]
+                new[0], new[1] = expec_tot + court.points_last, self.pass_dict[key][1] + 1
+                new[0] = float(new[0]/new[1])
+                self.pass_dict[key] = (float(new[0]),int(new[1]))
             elif event[0] == 'defense':
-                new[0], new[1] = self.defense_dict[key][event[2]][0] + court.points_last, self.defense_dict[key][event[2]][1] + 1
-                self.defense_dict[key][event[2]] = (int(new[0]),int(new[1]))
+                expec_tot = self.defense_dict[key][event[2]][0] * self.defense_dict[key][event[2]][1]
+                new[0], new[1] = expec_tot + court.points_last, self.defense_dict[key][event[2]][1] + 1
+                new[0] = float(new[0]/new[1])
+                self.defense_dict[key][event[2]] = (float(new[0]),int(new[1]))
             elif event[0] == 'off_ball':
-                new[0], new[1] = self.off_ball_dict[key][event[2]][0] + court.points_last, self.off_ball_dict[key][event[2]][1] + 1
-                self.off_ball_dict[key][event[2]] = (int(new[0]),int(new[1]))
+                expec_tot = self.off_ball_dict[key][event[2]][0] * self.off_ball_dict[key][event[2]][1]
+                new[0], new[1] = expec_tot + court.points_last, self.off_ball_dict[key][event[2]][1] + 1
+                new[0] = float(new[0]/new[1])
+                self.off_ball_dict[key][event[2]] = (float(new[0]),int(new[1]))
             elif event[0] == 'keep':
-                new[0], new[1] = self.keep_dict[key][event[2]][0] + court.points_last, self.keep_dict[key][event[2]][1] + 1
-                self.keep_dict[key][event[2]] = (int(new[0]),int(new[1]))
+                expec_tot = self.keep_dict[key][event[2]][0] * self.keep_dict[key][event[2]][1]
+                new[0], new[1] = expec_tot + court.points_last, self.keep_dict[key][event[2]][1] + 1
+                new[0] = float(new[0]/new[1])
+                self.keep_dict[key][event[2]] = (float(new[0]),int(new[1]))
             self.ledger = 0
+            
+    #this is to reset a players attempts each game
+    def brain_reset(self):
+        new = [0,0]
+        for k,v in self.shoot_dict.iteritems():
+            new[0], new[1] = v[0], v[1]
+            new[1] = 10 * new[0]
+            v = (new[0], new[1])
+        for k,v in self.pass_dict.iteritems():
+            new[0], new[1] = v[0], v[1]
+            new[1] = 10 * new[0]
+            v = (new[0], new[1])
+        for key,action in self.defense_dict.iteritems():
+            for k,v in action.iteritems():
+                new[0], new[1] = v[0], v[1]
+                new[1] = 10 * new[0]
+                v = (new[0], new[1])
+        for key,action in self.off_ball_dict.iteritems():
+            for k,v in action.iteritems():
+                new[0], new[1] = v[0], v[1]
+                new[1] = 10 * new[0]
+                v = (new[0], new[1])
+        for key,action in self.keep_dict.iteritems():
+            for k,v in action.iteritems():
+                new[0], new[1] = v[0], v[1]
+                new[1] = 10 * new[0]
+                v = (new[0], new[1])
+            
             
         
     
@@ -285,8 +324,8 @@ class Player():
     #This is the function to check if a defender steals the ball from the ball_handler        
     def hand_check(self, opponent, ball, court):
         steal_check = random.randint(1,self.steal*2)
-        grab_check = random.randint(1,40)
-        if steal_check >= 15 + opponent.ball_handle:
+        grab_check = random.randint(1,100)
+        if steal_check >= 10 + opponent.ball_handle:
             opponent.has_ball = False
             ball.is_steal = True
             ball.last_touch = self.player_id
@@ -300,7 +339,7 @@ class Player():
     #first a 'pass' check from the player with the ball, to check for a good pass
     #then a 'hand' check to see if the receiver catches the ball
     def pass_ball(self, target, ball, court):
-        #print 'Pass attempted'
+        print 'Pass attempted'
         ball.picked_up_dribble = False
         fate_pass = random.randint(1,60)
         fate_catch = random.randint(1,60)
@@ -322,7 +361,7 @@ class Player():
                 ball.poss_change(target, court)
                 ball.court_position[0] = target.court_position[0]
                 ball.court_position[1] = target.court_position[1]
-                #print 'Pass made'
+                print 'Pass made'
             else:
                 #this is for a wayward pass, hence why the focal point is on the passer; this could cause some crazy passes like 15 blocks backwards
                 ball.destination[0], ball.destination[1] = self.court_position[0], self.court_position[1]
@@ -378,7 +417,7 @@ class Player():
             self.has_ball = False
             if in_layup == True:
                 shot_fate = random.randint(1,100)
-                if shot_fate <= 70 + layup_percent - true_modifier:
+                if shot_fate <= 60 + layup_percent - true_modifier:
                     #this is a placeholder text
                     print 'Layup made'
                     court.points_last = 1
@@ -389,7 +428,7 @@ class Player():
                 distance_from_basket = self.distance_from_basket()
                 if distance_from_basket < 6:
                     shot_fate = random.randint(1,100)
-                    if shot_fate <= 50 + self.jump_shooting - court_modifier - true_modifier:
+                    if shot_fate <= 40 + self.jump_shooting - court_modifier - true_modifier:
                         #this is a placeholder text
                         print "Jump Shot made"
                         court.points_last = 1
@@ -613,7 +652,7 @@ class Player():
     
     #this method will determine if the player 'jumps' the offensive player successfully; this is from the perspective of the defender
     def def_cutoff_check(self, opponent):
-        check = self.strength + self.onball_d - opponent.strength - random.randint(1, opponent.ball_handle)
+        check = (self.strength/2) + self.onball_d - opponent.strength - random.randint(1, opponent.ball_handle)
         if check >= 0:
             return True
         else:

@@ -423,6 +423,8 @@ class Court:
         #this is to determine the team who starts with the ball at the beginning of the game; simulates a coin flip
         chance = random.randint(1,100)
         chance_count = 0
+        for id,player in self.players.iteritems():
+            player.brain_reset()
         for team in self.point_guards:
             if chance <= 50 + (chance_count*50):
                 ball.team_id_possession = team
