@@ -240,7 +240,7 @@ class Player():
         
     #this is the off_ball brain; well you get it...
     def off_ball_brain(self, ball, court, shot_clock, time):
-        the_key = court.off_key(self, ball, shot_clock, time)
+        the_key = court.proximity_key(self, ball, shot_clock, time)
         action = self.off_ball_value_retrieve(the_key)
         if action[0] == 'back' or action[0] == 'left' or action[0] == 'right':
             self.off_ball_controller('post', ball, court, action[0])
@@ -451,9 +451,9 @@ class Player():
         defense_modifier = 0
         distance = self.distance_between_players(opponent)
         if distance < 2:
-            defense_modifier = (self.height + random.randint(0, self.jump))*5
+            defense_modifier = (self.height + random.randint(0, self.jump))*2
         elif distance < 3:
-            defense_modifier = (self.height + random.randint(0,self.jump))*4
+            defense_modifier = (self.height + random.randint(0,self.jump))
             
         return defense_modifier
             
@@ -465,8 +465,8 @@ class Player():
     #it returns a "destination" for the defender to go to
     def on_ball_destination(self, offense_player, shooter, destination=[7,1]):
         if shooter == True:
-            x = destination[0] + round((offense_player.court_position[0] - destination[0])*0.8)
-            y = destination[1] + round((offense_player.court_position[1] - destination[1])*0.8)
+            x = destination[0] + round((offense_player.court_position[0] - destination[0])*0.9)
+            y = destination[1] + round((offense_player.court_position[1] - destination[1])*0.9)
             destination = [int(x),int(y)]
         else:
             x = destination[0] + round((offense_player.court_position[0] - destination[0])*0.5)
