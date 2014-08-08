@@ -232,7 +232,7 @@ class Player():
         choice = [0,key,0]
         for key,value in self.defense_dict[key].iteritems():
             x_value = float(value[0])/float(value[1])
-            if choice[2] == 0 or x_value < choice[2]:
+            if choice[2] == 0 or x_value > choice[2]:
                 choice[0], choice[2] = key, x_value
                 
         self.def_controller(choice[0], opponent, ball, court, ball_car)
@@ -283,29 +283,25 @@ class Player():
     #this is to reset a players attempts each game
     def brain_reset(self):
         new = [0,0]
+        base = 10
         for k,v in self.shoot_dict.iteritems():
             new[0], new[1] = v[0], v[1]
-            new[1] = 10 * new[0]
-            v = (new[0], new[1])
+            v = (new[0], base)
         for k,v in self.pass_dict.iteritems():
             new[0], new[1] = v[0], v[1]
-            new[1] = 10 * new[0]
-            v = (new[0], new[1])
+            v = (new[0], base)
         for key,action in self.defense_dict.iteritems():
             for k,v in action.iteritems():
                 new[0], new[1] = v[0], v[1]
-                new[1] = 10 * new[0]
-                v = (new[0], new[1])
+                v = (new[0], base)
         for key,action in self.off_ball_dict.iteritems():
             for k,v in action.iteritems():
                 new[0], new[1] = v[0], v[1]
-                new[1] = 10 * new[0]
-                v = (new[0], new[1])
+                v = (new[0], base)
         for key,action in self.keep_dict.iteritems():
             for k,v in action.iteritems():
                 new[0], new[1] = v[0], v[1]
-                new[1] = 10 * new[0]
-                v = (new[0], new[1])
+                v = (new[0], base)
             
             
         
@@ -423,6 +419,7 @@ class Player():
                     court.points_last = 1
                 else:
                     ball.rebound(court)
+                    print 'dude'
             else:
                 #Here is the place to put the jumpshot programming lines
                 distance_from_basket = self.distance_from_basket()
@@ -434,13 +431,14 @@ class Player():
                         court.points_last = 1
                     else:
                         ball.rebound(court, distance_from_basket)
+                        print 'dude'
                 else:
                     court_modifier += (7 * (distance_from_basket - 7))
                     shot_fate = random.randint(1,100)
-                    if shot_fate <= 10 + self.jump_shooting + self.three_modifier - court_modifier - true_modifier:
+                    if shot_fate <= 5 + (self.jump_shooting/4) + self.three_modifier - court_modifier - true_modifier:
                         #this is a placeholder text
                         print "Made the Three"
-                        court.points_last = 2
+                        court.points_last = 1
                     else:
                         ball.rebound(court, distance_from_basket)
                         
@@ -453,7 +451,9 @@ class Player():
         defense_modifier = 0
         distance = self.distance_between_players(opponent)
         if distance < 2:
-            defense_modifier = self.height + random.randint(0, self.jump)
+            defense_modifier = (self.height + random.randint(0, self.jump))*5
+        elif distance < 3:
+            defense_modifier = (self.height + random.randint(0,self.jump))*4
             
         return defense_modifier
             
@@ -508,6 +508,7 @@ class Player():
     #for the incorporation of a blocking mechanic
     def block_check(self, opponent):
         true_modifier = self.defense_jump(opponent) - (opponent.shooting_traffic + opponent.height)
+        #print true_modifier
         if true_modifier < 0:
             true_modifier = 0
         
@@ -522,6 +523,8 @@ class Player():
             #direction of a block, that is to say it probably isn't around the rim
             opponent.shot_blocked = True
         
+        if true_modifier < 0:
+            true_modifier = 0
         return true_modifier
     
     #this is a function to see if a player is in-between a player passing the ball

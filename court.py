@@ -290,7 +290,7 @@ class Court:
         for k,v in self.players.iteritems():
             if the_num < 1000 and v.team_id != shooter.team_id:
                 the_num += v.block_check(shooter)
-                
+        
         return the_num
         
         
@@ -362,7 +362,7 @@ class Court:
                 defense = self.defense_pairs[id]
                 new_position = {}
                 for defender,offense in defense.iteritems():
-                    self.players[defender].court_position = self.players[defender].on_ball_destination(self.players[offense],False)
+                    self.players[defender].court_position = self.players[defender].on_ball_destination(self.players[offense],True)
         
         self.update_player_pos()
         sequence.append(self.tk_frame())
@@ -419,7 +419,7 @@ class Court:
     def game(self, ball, sequence):
         self.score = 0
         #the games last 10 mins(600 secs) with no half time
-        seconds = 1200
+        seconds = 600
         #this is to determine the team who starts with the ball at the beginning of the game; simulates a coin flip
         chance = random.randint(1,100)
         chance_count = 0
@@ -440,7 +440,7 @@ class Court:
             self.points_last = 0
             ball.shot_att = False
             
-            if shot_clock_violation == True or out_bounds == True or seconds == 1200:
+            if shot_clock_violation == True or out_bounds == True or seconds == 600:
                 if shot_clock_violation == True or out_bounds == True:
                     for team in self.point_guards:
                         if team != self.players[ball.last_touch].team_id:
@@ -464,7 +464,7 @@ class Court:
                     break
             for id,player in self.players.iteritems():
                 player.ledger_reader(self)
-                self.score += self.points_last
+            self.score += self.points_last
             if seconds <= 0:
                 break
         print len(sequence)
