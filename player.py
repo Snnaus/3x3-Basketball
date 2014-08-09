@@ -102,15 +102,14 @@ class Player():
     #This method takes the sense input for passes and returns the expected value for that key; it also adds the key if the key is not present
     def pass_value_retrieve(self, key):
         if key not in self.pass_dict:
-            self.pass_dict[key] = (1.0,1.0)
-            
-        return self.pass_dict[key][0]
+            self.pass_dict[key] = (1,1)
+        return float(self.pass_dict[key][0])/float(self.pass_dict[key][1])
     
     #this method takes the sense input for shooting and returns the expected value for that key
     def shoot_value_retrieve(self, key):
         if key not in self.shoot_dict:
-            self.shoot_dict[key] = (1.0,1.0)
-        return self.shoot_dict[key][0]
+            self.shoot_dict[key] = (1,1)
+        return float(self.shoot_dict[key][0])/float(self.shoot_dict[key][1])
         
     #this method takes the sense input for keep/drive ball and compares all the expected values; it returns the highest expected value and the action corresponding.
     #[action, expected value]
@@ -118,19 +117,19 @@ class Player():
         if key not in self.keep_dict:
             start_value = {}
             for action in self.post_actions:
-                start_value[action] = (1.0,1.0)
+                start_value[action] = (1,1)
             for x in self.face_actions:
-                start_value[x] = (1.0,1.0)
+                start_value[x] = (1,1)
             self.keep_dict[key] = start_value
         
         current_action = [0,-10000]
         for k,v in self.keep_dict[key].iteritems():
-            x_value = v[0]
+            x_value = float(v[0])/float(v[1])
             if self.post_up == True and k in self.post_actions:
-                if current_action[1] < x_value:
+                if current_action[1] < x_value or current_action[1] == 0:
                     current_action[0], current_action[1] = k, x_value
             elif self.post_up == False and k in self.face_actions:
-                if current_action[1] < x_value:
+                if current_action[1] < x_value or current_action[1] == 0:
                     current_action[0], current_action[1] = k, x_value
         
         return current_action
@@ -140,16 +139,16 @@ class Player():
         if key not in self.off_ball_dict:
             start_value = {}
             for action in self.post_actions:
-                start_value[action] = (1.0,1.0)
+                start_value[action] = (1,1)
             for x in self.face_actions:
-                start_value[x] = (1.0,1.0)
+                start_value[x] = (1,1)
             self.off_ball_dict[key] = start_value
         
         current_action = [0,-10000]
         for k,v in self.off_ball_dict[key].iteritems():
-            x_value = v[0]
+            x_value = float(v[0])/float(v[1])
             if self.post_up == True and k in self.post_actions:
-                if current_action[1] < x_value:
+                if current_action[1] < x_value or current_action[1] == 0:
                     current_action[0], current_action[1] = k, x_value
             elif self.post_up == False and k in self.face_actions:
                 if current_action[1] < x_value:
@@ -193,6 +192,7 @@ class Player():
         pass_target = pass_stuff[1]
         passs[1], passs[2] = pass_stuff[0], pass_stuff[2]
         
+        #print keep[3], passs[2], shoot[2]
         #here is where the program will compare the expected values of the actions and make a decision based on the highest expected value.
         choice = keep
         expected = keep[3]
@@ -223,8 +223,10 @@ class Player():
         key = court.def_key(self, opponent, ball, ball_car, shot_clock, time)
         if key not in self.defense_dict:
             self.defense_dict[key] = {
-                'off':(1.0,1.0),
-                'tight': (1.0,1.0)
+                'off':(1,1),
+                'tight': (1,1),
+                'off_ball': (1,1),
+                'tight_ball': (1,1)
                 }
                 
         choice = [0,key,0]
@@ -251,55 +253,29 @@ class Player():
         for event in self.ledger:
             key = event[1]
             new = [0,0]
+            old_points = court.points_last
             if event[0] == 'shoot':
-                expec_tot = self.shoot_dict[key][0] * self.shoot_dict[key][1]
-                new[0], new[1] = expec_tot + court.points_last, self.shoot_dict[key][1] + 1
-                new[0] = float(new[0]/new[1])
-                self.shoot_dict[key] = (float(new[0]),int(new[1]))
+                if court.points_last == 0:
+                    court.points_last = -1
+                new[0], new[1] = self.shoot_dict[key][0] + court.points_last, self.shoot_dict[key][1] + 1
+                self.shoot_dict[key] = (int(new[0]),int(new[1]))
             elif event[0] == 'pass':
-                expec_tot = self.pass_dict[key][0] * self.pass_dict[key][1]
-                new[0], new[1] = expec_tot + court.points_last, self.pass_dict[key][1] + 1
-                new[0] = float(new[0]/new[1])
-                self.pass_dict[key] = (float(new[0]),int(new[1]))
+                if court.points_last > 0:
+                    court.points_last += 1
+                new[0], new[1] = self.pass_dict[key][0] + court.points_last, self.pass_dict[key][1] + 1
+                self.pass_dict[key] = (int(new[0]),int(new[1]))
             elif event[0] == 'defense':
-                expec_tot = self.defense_dict[key][event[2]][0] * self.defense_dict[key][event[2]][1]
-                new[0], new[1] = expec_tot + court.points_last, self.defense_dict[key][event[2]][1] + 1
-                new[0] = float(new[0]/new[1])
-                self.defense_dict[key][event[2]] = (float(new[0]),int(new[1]))
+                new[0], new[1] = self.defense_dict[key][event[2]][0] + court.points_last, self.defense_dict[key][event[2]][1] + 1
+                self.defense_dict[key][event[2]] = (int(new[0]),int(new[1]))
             elif event[0] == 'off_ball':
-                expec_tot = self.off_ball_dict[key][event[2]][0] * self.off_ball_dict[key][event[2]][1]
-                new[0], new[1] = expec_tot + court.points_last, self.off_ball_dict[key][event[2]][1] + 1
-                new[0] = float(new[0]/new[1])
-                self.off_ball_dict[key][event[2]] = (float(new[0]),int(new[1]))
+                new[0], new[1] = self.off_ball_dict[key][event[2]][0] + court.points_last, self.off_ball_dict[key][event[2]][1] + 1
+                self.off_ball_dict[key][event[2]] = (int(new[0]),int(new[1]))
             elif event[0] == 'keep':
-                expec_tot = self.keep_dict[key][event[2]][0] * self.keep_dict[key][event[2]][1]
-                new[0], new[1] = expec_tot + court.points_last, self.keep_dict[key][event[2]][1] + 1
-                new[0] = float(new[0]/new[1])
-                self.keep_dict[key][event[2]] = (float(new[0]),int(new[1]))
+                new[0], new[1] = self.keep_dict[key][event[2]][0] + court.points_last, self.keep_dict[key][event[2]][1] + 1
+                self.keep_dict[key][event[2]] = (int(new[0]),int(new[1]))
+            court.points_last = old_points
             self.ledger = 0
             
-    #this is to reset a players attempts each game
-    def brain_reset(self):
-        new = [0,0]
-        base = 10
-        for k,v in self.shoot_dict.iteritems():
-            new[0], new[1] = v[0], v[1]
-            v = (new[0], base)
-        for k,v in self.pass_dict.iteritems():
-            new[0], new[1] = v[0], v[1]
-            v = (new[0], base)
-        for key,action in self.defense_dict.iteritems():
-            for k,v in action.iteritems():
-                new[0], new[1] = v[0], v[1]
-                v = (new[0], base)
-        for key,action in self.off_ball_dict.iteritems():
-            for k,v in action.iteritems():
-                new[0], new[1] = v[0], v[1]
-                v = (new[0], base)
-        for key,action in self.keep_dict.iteritems():
-            for k,v in action.iteritems():
-                new[0], new[1] = v[0], v[1]
-                v = (new[0], base)
             
             
         
@@ -333,7 +309,7 @@ class Player():
     #first a 'pass' check from the player with the ball, to check for a good pass
     #then a 'hand' check to see if the receiver catches the ball
     def pass_ball(self, target, ball, court):
-        #print 'Pass attempted'
+        print 'Pass attempted'
         ball.picked_up_dribble = False
         fate_pass = random.randint(1,60)
         fate_catch = random.randint(1,60)
@@ -355,7 +331,7 @@ class Player():
                 ball.poss_change(target, court)
                 ball.court_position[0] = target.court_position[0]
                 ball.court_position[1] = target.court_position[1]
-                #print 'Pass made'
+                print 'Pass made'
             else:
                 #this is for a wayward pass, hence why the focal point is on the passer; this could cause some crazy passes like 15 blocks backwards
                 ball.destination[0], ball.destination[1] = self.court_position[0], self.court_position[1]
@@ -411,9 +387,9 @@ class Player():
             self.has_ball = False
             if in_layup == True:
                 shot_fate = random.randint(1,100)
-                if shot_fate <= 60 + layup_percent - true_modifier:
+                if shot_fate <= 25 + layup_percent - true_modifier:
                     #this is a placeholder text
-                    #print 'Layup made'
+                    print 'Layup made'
                     court.points_last = 1
                 else:
                     ball.rebound(court)
@@ -422,18 +398,18 @@ class Player():
                 distance_from_basket = self.distance_from_basket()
                 if distance_from_basket < 6:
                     shot_fate = random.randint(1,100)
-                    if shot_fate <= 40 + self.jump_shooting - court_modifier - true_modifier:
+                    if shot_fate <= 10 + self.jump_shooting - court_modifier - true_modifier:
                         #this is a placeholder text
-                        #print "Jump Shot made"
+                        print "Jump Shot made"
                         court.points_last = 1
                     else:
                         ball.rebound(court, distance_from_basket)
                 else:
                     court_modifier += (7 * (distance_from_basket - 7))
                     shot_fate = random.randint(1,100)
-                    if shot_fate <= 5 + (self.jump_shooting/4) + self.three_modifier - court_modifier - true_modifier:
+                    if shot_fate <= self.jump_shooting + self.three_modifier - court_modifier - true_modifier:
                         #this is a placeholder text
-                        #print "Made the Three"
+                        print "Made the Three"
                         court.points_last = 2
                     else:
                         ball.rebound(court, distance_from_basket)
@@ -447,9 +423,9 @@ class Player():
         defense_modifier = 0
         distance = self.distance_between_players(opponent)
         if distance < 2:
-            defense_modifier = (self.height + random.randint(0, self.jump))*2
+            defense_modifier = (self.height + random.randint(0, self.jump))*4
         elif distance < 3:
-            defense_modifier = (self.height + random.randint(0,self.jump))
+            defense_modifier = (self.height + random.randint(0,self.jump))*2
             
         return defense_modifier
             
