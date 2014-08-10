@@ -355,11 +355,16 @@ class Court:
             elif player.team_id == team and three == 0 and player.player_id != one.player_id:
                 three = player
                 player.on_defense = False
-                break
+            elif player.team_id != team:
+                player.on_defense = True
         one.court_position, two.court_position, three.court_position = [7,9], [13,7], [1,7]
         
-        for defender,offense in self.defense_pairs.iteritems():
-            self.players[defender].court_position = self.players[defender].on_ball_destination(self.players[offense],True)
+        for id,teams in self.defense_pairs.iteritems():
+            if id != team:
+                defense = self.defense_pairs[id]
+                new_position = {}
+                for defender,offense in defense.iteritems():
+                    self.players[defender].court_position = self.players[defender].on_ball_destination(self.players[offense],True)
         
         self.update_player_pos()
         sequence.append(self.tk_frame())

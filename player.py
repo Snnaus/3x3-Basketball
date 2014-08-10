@@ -196,7 +196,7 @@ class Player():
         #here is where the program will compare the expected values of the actions and make a decision based on the highest expected value.
         choice = passs
         expected = passs[2]
-        if passs[2] > expected and ball.picked_up_dribble == True:
+        if keep[3] > expected and ball.picked_up_dribble == False:
             choice = keep
             expected = keep[3]
         if shoot[2] > expected and ball.team_id_possession == self.team_id:
@@ -387,7 +387,7 @@ class Player():
             self.has_ball = False
             if in_layup == True:
                 shot_fate = random.randint(1,100)
-                if shot_fate <= 35 + layup_percent - true_modifier:
+                if shot_fate <= 50 + layup_percent - true_modifier:
                     #this is a placeholder text
                     print 'Layup made'
                     court.points_last = 1
@@ -398,7 +398,7 @@ class Player():
                 distance_from_basket = self.distance_from_basket()
                 if distance_from_basket < 6:
                     shot_fate = random.randint(1,100)
-                    if shot_fate <= 20 + self.jump_shooting - court_modifier - true_modifier:
+                    if shot_fate <= 30 + self.jump_shooting - court_modifier - true_modifier:
                         #this is a placeholder text
                         print "Jump Shot made"
                         court.points_last = 1
