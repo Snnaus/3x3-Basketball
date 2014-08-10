@@ -196,7 +196,7 @@ class Player():
         #here is where the program will compare the expected values of the actions and make a decision based on the highest expected value.
         choice = passs
         expected = passs[2]
-        if passs[2] > expected and ball.picked_up_dribble == False:
+        if passs[2] > expected and ball.picked_up_dribble == True:
             choice = keep
             expected = keep[3]
         if shoot[2] > expected and ball.team_id_possession == self.team_id:
