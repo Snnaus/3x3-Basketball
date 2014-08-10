@@ -36,28 +36,28 @@ class Player():
     patient = False
     
     #physical skills of the player
-    speed = 5
-    jump = 5
-    stamina = 5
-    strength = 5
-    rebound = 5
-    hands = 5
+    speed = 10
+    jump = 10
+    stamina = 10
+    strength = 10
+    rebound = 10
+    hands = 10
     
     #offensive skills
-    layup = 5
+    layup = 10
     dunk = False
-    jump_shooting = 5
-    three_modifier = 5
-    ball_handle = 5
-    passing = 5
-    shooting_traffic = 5
-    post_skill = 5
+    jump_shooting = 0
+    three_modifier = 0
+    ball_handle = 10
+    passing = 10
+    shooting_traffic = 10
+    post_skill = 10
     
     #defensive skills
-    onball_def = 5
-    post_def = 5
-    steal = 5
-    block = 5
+    onball_def = 10
+    post_def = 10
+    steal = 10
+    block = 10
     
     #playstyle
     stealer = False
@@ -243,7 +243,7 @@ class Player():
         
     #this is the off_ball brain; well you get it...
     def off_ball_brain(self, ball, court, shot_clock, time):
-        the_key = court.proximity_key(self, ball, shot_clock, time)
+        the_key = court.off_key(self, ball, shot_clock, time)
         action = self.off_ball_value_retrieve(the_key)
         if action[0] == 'back' or action[0] == 'left' or action[0] == 'right' and self.post_defender != 0:
             self.off_ball_controller('post', ball, court, action[0])
@@ -261,18 +261,20 @@ class Player():
             old_points = court.points_last
             if event[0] == 'shoot':
                 if court.points_last == 0:
-                    court.points_last = -1
+                    court.points_last = -3
                 new[0], new[1] = self.shoot_dict[key][0] + court.points_last, self.shoot_dict[key][1] + 1
                 self.shoot_dict[key] = (int(new[0]),int(new[1]))
             elif event[0] == 'pass':
-                if court.points_last > 0:
-                    court.points_last += 1
+                if court.points_last >= 0:
+                    court.points_last += 3
                 new[0], new[1] = self.pass_dict[key][0] + court.points_last, self.pass_dict[key][1] + 1
                 self.pass_dict[key] = (int(new[0]),int(new[1]))
             elif event[0] == 'defense':
                 new[0], new[1] = self.defense_dict[key][event[2]][0] + court.points_last, self.defense_dict[key][event[2]][1] + 1
                 self.defense_dict[key][event[2]] = (int(new[0]),int(new[1]))
             elif event[0] == 'off_ball':
+                '''if event[2] == 'south' or event[2] == 'south_east' or event[2] == 'south_west' and court.points_last >= 0:
+                    court.points_last += 1'''
                 new[0], new[1] = self.off_ball_dict[key][event[2]][0] + court.points_last, self.off_ball_dict[key][event[2]][1] + 1
                 self.off_ball_dict[key][event[2]] = (int(new[0]),int(new[1]))
             elif event[0] == 'keep':
@@ -428,9 +430,9 @@ class Player():
         defense_modifier = 0
         distance = self.distance_between_players(opponent)
         if distance < 2:
-            defense_modifier = (self.height + random.randint(0, self.jump))*3
+            defense_modifier = (self.height + random.randint(0, self.jump))
         elif distance < 3:
-            defense_modifier = (self.height + random.randint(0,self.jump))
+            defense_modifier = (self.height + random.randint(0,self.jump))/2
             
         return defense_modifier
             

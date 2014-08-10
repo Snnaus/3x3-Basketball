@@ -348,13 +348,16 @@ class Court:
         one = self.players[self.point_guards[team]]
         two = 0
         three = 0
+        offense_pl = [self.point_guards[team]]
         for id,player in self.players.iteritems():
             if player.team_id == team and two == 0 and player.player_id != one.player_id:
                 two = player
                 player.on_defense = False
+                offense_pl.append(id)
             elif player.team_id == team and three == 0 and player.player_id != one.player_id:
                 three = player
                 player.on_defense = False
+                offense_pl.append(id)
             elif player.team_id != team:
                 player.on_defense = True
         one.court_position, two.court_position, three.court_position = [7,9], [13,7], [1,7]
@@ -368,14 +371,21 @@ class Court:
         
         self.update_player_pos()
         sequence.append(self.tk_frame())
-        for id,player in self.players.iteritems():
+        ran_pick = random.randint(1,3)
+        player = self.players[offense_pl[ran_pick-1]]
+        player.has_ball = True
+        player.on_defense = False
+        ball.possession = True
+        ball.last_possession = player.player_id
+        ball.last_touch = player.player_id
+        '''for id,player in self.players.iteritems():
             player.has_ball = False
             if player.player_id == self.point_guards[team]:
                 player.has_ball = True
                 player.on_defense = False
                 ball.possession = True
                 ball.last_possession = player.player_id
-                ball.last_touch = player.player_id
+                ball.last_touch = player.player_id'''
         
         
         
