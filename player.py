@@ -194,11 +194,11 @@ class Player():
         
         #print keep[3], passs[2], shoot[2]
         #here is where the program will compare the expected values of the actions and make a decision based on the highest expected value.
-        choice = keep
-        expected = keep[3]
-        if passs[2] > expected:
-            choice = passs
-            expected = passs[2]
+        choice = passs
+        expected = passs[2]
+        if passs[2] > expected and ball.picked_up_dribble == False:
+            choice = keep
+            expected = keep[3]
         if shoot[2] > expected and ball.team_id_possession == self.team_id:
             choice = shoot
         
@@ -387,7 +387,7 @@ class Player():
             self.has_ball = False
             if in_layup == True:
                 shot_fate = random.randint(1,100)
-                if shot_fate <= 25 + layup_percent - true_modifier:
+                if shot_fate <= 35 + layup_percent - true_modifier:
                     #this is a placeholder text
                     print 'Layup made'
                     court.points_last = 1
@@ -398,7 +398,7 @@ class Player():
                 distance_from_basket = self.distance_from_basket()
                 if distance_from_basket < 6:
                     shot_fate = random.randint(1,100)
-                    if shot_fate <= 10 + self.jump_shooting - court_modifier - true_modifier:
+                    if shot_fate <= 20 + self.jump_shooting - court_modifier - true_modifier:
                         #this is a placeholder text
                         print "Jump Shot made"
                         court.points_last = 1
@@ -423,9 +423,9 @@ class Player():
         defense_modifier = 0
         distance = self.distance_between_players(opponent)
         if distance < 2:
-            defense_modifier = (self.height + random.randint(0, self.jump))*4
+            defense_modifier = (self.height + random.randint(0, self.jump))*3
         elif distance < 3:
-            defense_modifier = (self.height + random.randint(0,self.jump))*2
+            defense_modifier = (self.height + random.randint(0,self.jump))
             
         return defense_modifier
             
