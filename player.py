@@ -207,7 +207,10 @@ class Player():
             if choice[2] != 'left' or choice[2] != 'back' or choice[2] != 'right':
                 self.off_controller(keep[2], ball, court)
             else:
-                self.off_controller('post', ball, court, keep[2])
+                if self.post_defender != 0:
+                    self.off_controller('post', ball, court, keep[2])
+                    if action[0] == 'left' or action[0] == 'right':
+                        self.off_controller('go_to_faceup', ball, court)
             self.ledger.append((choice[0],choice[1],choice[2]))
         elif choice[0] == 'pass':
             self.off_controller('pass', ball, court, court.players[pass_target])
@@ -218,7 +221,7 @@ class Player():
             
     #this is the defensive brain of the player; here the keys are generated, decisions made, and sent to the controller
     def defence_brain(self, ball, court, shot_clock, time):
-        opponent = court.players[court.defense_pairs[self.player_id]]
+        opponent = court.players[court.defense_pairs[self.team_id][self.player_id]]
         ball_car = court.players[ball.last_possession]
         key = court.def_key(self, opponent, ball, ball_car, shot_clock, time)
         if key not in self.defense_dict:
@@ -242,8 +245,10 @@ class Player():
     def off_ball_brain(self, ball, court, shot_clock, time):
         the_key = court.proximity_key(self, ball, shot_clock, time)
         action = self.off_ball_value_retrieve(the_key)
-        if action[0] == 'back' or action[0] == 'left' or action[0] == 'right':
+        if action[0] == 'back' or action[0] == 'left' or action[0] == 'right' and self.post_defender != 0:
             self.off_ball_controller('post', ball, court, action[0])
+            if action[0] == 'left' or action[0] == 'right':
+                self.off_ball_controller('go_to_faceup', ball, court)
         else:
             self.off_ball_controller(action[0], ball, court)
         self.ledger.append(['off_ball', the_key, action[0]])
@@ -459,7 +464,7 @@ class Player():
         self.def_cutoff(offense_player, ball, court)
         
         if self.distance_between_players(offense_player) < 2 and self.stealer == True:
-            self.hand_check(offense_player, ball)
+            self.hand_check(offense_player, ball, court)
         
         
     #this is a function to determine the distance between two players; this is used
@@ -668,9 +673,8 @@ class Player():
     def speed_post_check(self, opponent):
         check = (self.post_skill + random.randint(1, self.speed)) - (opponent.post_def + random.randint(1, opponent.speed))
         if check > 0:
-            return True
-        else:
-            return False
+            opponent.move_count -= 1
+        
             
     #This method actually proceeds with the player backing down the opponent
     def back_down(self, opponent, ball, court):
@@ -739,19 +743,19 @@ class Player():
     #This method is to take the player, opponent, and a post direction (back, left, right) and process this into a movement; with a return
     #value on the speed post moves to determine mimicry.
     def post_move(self, the_move, ball, court):
-        opponent = court.players[self.post_defender]
-        moves = self.post_possible(opponent)
-        if moves != False:
-            speed_move = False
-            if the_move == 'back':
-                self.back_down(opponent, ball, court)
-            else:
-                self.destination[0] = self.court_position[0] + directions[moves[the_move]][0]
-                self.destination[1] = self.court_position[1] + directions[moves[the_move]][1]
-                if court.spot_open(self.destination, ball):
-                    self.move_to(ball, court)
-                    speed_move = self.speed_post_check(opponent)
-                    return speed_move
+        if self.post_defender != 0:
+            opponent = court.players[self.post_defender]
+            moves = self.post_possible(opponent)
+            if moves != False:
+                speed_move = False
+                if the_move == 'back':
+                    self.back_down(opponent, ball, court)
+                else:
+                    self.destination[0] = self.court_position[0] + directions[moves[the_move]][0]
+                    self.destination[1] = self.court_position[1] + directions[moves[the_move]][1]
+                    if court.spot_open(self.destination, ball):
+                        self.move_to(ball, court)
+                        self.speed_post_check(opponent)
             
     #this method is for the chasing of the ball
     def chase_ball(self, ball, court):
@@ -776,6 +780,7 @@ class Player():
         elif command == 'go_to_faceup':
             if self.face_up == False:
                 self.switch_up()
+                self.post_defender = 0
         elif command == 'shoot':
             defense = court.defense_modifier(self)
             self.shoot(defense, ball, court)
@@ -805,7 +810,7 @@ class Player():
             self.move_to(ball, court)
         elif command == 'post':
             if self.post_up == True:
-                return self.post_move(sub_command, ball, court)
+                self.post_move(sub_command, ball, court)
         elif command == 'go_to_post':
             if self.post_up == False:
                 self.go_post(ball, court)
