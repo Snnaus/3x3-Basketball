@@ -394,6 +394,8 @@ class Court:
         highest = 0
         for id,player in self.players.iteritems():
             player.move_count = round(player.speed/4)
+            if player.has_ball == True:
+                player.move_count = int(player.move_count*0.75)
             if player.move_count > highest:
                 highest = player.move_count
                 

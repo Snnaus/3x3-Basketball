@@ -262,11 +262,15 @@ class Player():
             if event[0] == 'shoot':
                 if court.points_last == 0:
                     court.points_last = -3
+                elif court.points_last > 0:
+                    court.points_last = court.points_last*2
                 new[0], new[1] = self.shoot_dict[key][0] + court.points_last, self.shoot_dict[key][1] + 1
                 self.shoot_dict[key] = (int(new[0]),int(new[1]))
             elif event[0] == 'pass':
-                if court.points_last >= 0:
-                    court.points_last += 3
+                if court.points_last == 0:
+                    court.points_last += 1
+                elif court.points_last > 0:
+                    court.points_last += 5
                 new[0], new[1] = self.pass_dict[key][0] + court.points_last, self.pass_dict[key][1] + 1
                 self.pass_dict[key] = (int(new[0]),int(new[1]))
             elif event[0] == 'defense':
@@ -318,7 +322,7 @@ class Player():
     def pass_ball(self, target, ball, court):
         print 'Pass attempted'
         ball.picked_up_dribble = False
-        fate_pass = random.randint(1,60)
+        fate_pass = random.randint(1,100)
         fate_catch = random.randint(1,60)
         self.has_ball = False
         tippers = court.players_between(ball, target.court_position, self.court_position)
@@ -334,7 +338,7 @@ class Player():
         distance = self.distance_between_players(target)
         if tipped == False:
             ball.assitor = self.player_id
-            if fate_pass <= 50 + self.passing/4 + target.hands/4:
+            if fate_pass <= 85 + self.passing + target.hands:
                 ball.poss_change(target, court)
                 ball.court_position[0] = target.court_position[0]
                 ball.court_position[1] = target.court_position[1]
@@ -394,7 +398,7 @@ class Player():
             self.has_ball = False
             if in_layup == True:
                 shot_fate = random.randint(1,100)
-                if shot_fate <= 50 + layup_percent - true_modifier:
+                if shot_fate <= 40 + layup_percent - true_modifier:
                     #this is a placeholder text
                     print 'Layup made'
                     court.points_last = 1
