@@ -80,6 +80,19 @@ class Court:
                 return 8
             else:
                 return 'B'
+                
+    #this method is to take a player and generate a key based on how far away the player is from the basket.
+    def distance_key(self, player, key):
+        dist = player.distance_from_basket()
+        if dist < 3:
+            key = key + '0'
+        elif dist < 6:
+            key = key + '1'
+        elif dist < 8:
+            key = key + '2'
+        else:
+            key = key + '3'
+        return key
     
     #this method is to create the proximity sensory key. It takes the players court_position as the input. This is for the offensive and off_ball controllers.
     def proximity_key(self, player, ball, shot_clock, time, shot=False):
@@ -114,6 +127,7 @@ class Court:
                             key = key + '0'
                 else:
                     key = key + '0'
+        key = self.distance_key(player, key)
         return key
             
     
