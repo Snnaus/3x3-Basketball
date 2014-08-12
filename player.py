@@ -14,6 +14,39 @@ directions = {
     'south_east': [1,-1],
     'wait': [0,0]
     }
+    
+radial_directions = {
+    'in_front': {
+        'back': [0,1],
+        'right': [-1,0],
+        'left': [1,0],
+        'forward': [0,-1]
+        },
+    'left_of': {
+        'back': [1,0],
+        'right': [0,1],
+        'left': [0,-1],
+        'forward': [-1,0]
+        },
+    'right_of': {
+        'back': [-1,0],
+        'right': [0,-1],
+        'left': [0,1],
+        'forward': [1,0]
+        },
+    'left_corner': {
+        'back': [1,1],
+        'right': [-1,1],
+        'left': [1,-1],
+        'forward': [-1,-1]
+        },
+    'right_corner': {
+        'back': [-1,1],
+        'right': [-1,-1],
+        'left': [1,1],
+        'forward': [1,-1]
+        },
+    }
 
 class Player():
     #This class is designed to give a player the functions needed to operate in the game
@@ -560,7 +593,11 @@ class Player():
     #this function is to move the player from their current position to their destination
     #while checking to see if their are any player is the way; for right now I am presuming
     #that the player will ONLY MOVE ONE BLOCK; 7/13 this function can now operate with a destination greater than one block away
-    def move_to(self, ball, court):
+    def move_to(self, ball, court, dest_return=False):
+        old_dest = [0,0]
+        if dest_return == True:
+            old_dest[0], old_dest[1] = self.destination[0], self.destination[1]
+            self.destination[0], self.destination[1] = 7, 2
         check_array = [0,0]
         check_array[0] = self.destination[0] - self.court_position[0]
         check_array[1] = self.destination[1] - self.court_position[1]
@@ -589,20 +626,24 @@ class Player():
         final_check = [0,0]
         final_check[0] = x_unit
         final_check[1] = int(slope)
-        des_check = [0,0]
-        des_check[0] = self.court_position[0]+final_check[0]
-        des_check[1] = self.court_position[1]+final_check[1]
-        if court.spot_open(des_check, ball) == True:
-            for x in directions:
-                if final_check == directions[x]:
-                    self.move(x)
-                
-            court.update_player_pos()
-
-        if self.has_ball == False:
-            self.pick_up_ball(ball, court)
+        if dest_return == True:
+            self.destination[0], self.destination[1] = old_dest[0], old_dest[1]
+            return final_check
         else:
-            ball.update_pos(self.court_position)
+            des_check = [0,0]
+            des_check[0] = self.court_position[0]+final_check[0]
+            des_check[1] = self.court_position[1]+final_check[1]
+            if court.spot_open(des_check, ball) == True:
+                for x in directions:
+                    if final_check == directions[x]:
+                        self.move(x)
+                    
+                court.update_player_pos()
+
+            if self.has_ball == False:
+                self.pick_up_ball(ball, court)
+            else:
+                ball.update_pos(self.court_position)
 
     def pick_up_ball(self, ball, court):
         pick_up = False
@@ -767,6 +808,32 @@ class Player():
     def chase_ball(self, ball, court):
         self.destination[0] = ball.court_position[0]
         self.destination[1] = ball.court_position[1]
+        self.move_to(ball, court)
+        
+    #this function is used to convert a radial direction to the players destination so that the move_to function can work
+    def radial_interpret(self, command, ball, court):
+        forward = self.move_to(ball, court, True)
+        direction = ''
+        if foward[0] == 0:
+            direction = 'in_front'
+        elif forward[1] == 0 and self.court_position[0] <= 7:
+            direction = 'right_of'
+        elif forward[1] == 0:
+            direction = 'left_of'
+        elif foward[0] == -1:
+            direction = 'left_corner'
+        else:
+            direction = 'right_corner'
+            
+        dest = [0,0]
+        dict = radial_directions[direction]
+        if command in dict:
+            dest[0], dest[1] = dict[command][0], dict[command][1]
+        else:
+            command = command.split()
+            dest[0] = dict[command[0]][0] + dict[command[1]][0]
+            dest[1] = dict[command[0]][1] + dict[command[1]][1]
+        self.destination[0], self.destination[1] = self.court_position[0] + dest[0], self.court_position[1] + dest[1]
         self.move_to(ball, court)
         
     #This method is the controller of the players action; that is to say the 'brain' will output a string which will then go into this method
