@@ -811,7 +811,7 @@ class Player():
         self.move_to(ball, court)
         
     #this function is used to convert a radial direction to the players destination so that the move_to function can work
-    def radial_interpret(self, command, ball, court):
+    def radial_interpret(self, ball, court, command=None):
         forward = self.move_to(ball, court, True)
         direction = ''
         if foward[0] == 0:
@@ -824,17 +824,20 @@ class Player():
             direction = 'left_corner'
         else:
             direction = 'right_corner'
-            
-        dest = [0,0]
-        dict = radial_directions[direction]
-        if command in dict:
-            dest[0], dest[1] = dict[command][0], dict[command][1]
+         
+        if command != None:
+            dest = [0,0]
+            dict = radial_directions[direction]
+            if command in dict:
+                dest[0], dest[1] = dict[command][0], dict[command][1]
+            else:
+                command = command.split()
+                dest[0] = dict[command[0]][0] + dict[command[1]][0]
+                dest[1] = dict[command[0]][1] + dict[command[1]][1]
+            self.destination[0], self.destination[1] = self.court_position[0] + dest[0], self.court_position[1] + dest[1]
+            self.move_to(ball, court)
         else:
-            command = command.split()
-            dest[0] = dict[command[0]][0] + dict[command[1]][0]
-            dest[1] = dict[command[0]][1] + dict[command[1]][1]
-        self.destination[0], self.destination[1] = self.court_position[0] + dest[0], self.court_position[1] + dest[1]
-        self.move_to(ball, court)
+            return direction
         
     #This method is the controller of the players action; that is to say the 'brain' will output a string which will then go into this method
     #where the corresponding action will be executed.

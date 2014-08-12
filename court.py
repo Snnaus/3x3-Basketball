@@ -84,9 +84,9 @@ class Court:
     #this method is to create the proximity sensory key. It takes the players court_position as the input. This is for the offensive and off_ball controllers.
     def proximity_key(self, player, ball, shot_clock, time, shot=False):
         key = ''
-        key = key + str(self.nine_court_key(player.court_position))
+        direction = radial_directions[player.radial_interpret(ball, court)]
         if shot == False:
-            for k,v in directions.iteritems():
+            for k,v in direction.iteritems():
                 test_position = [0,0]
                 test_position[0] = player.court_position[0] + v[0]
                 test_position[1] = player.court_position[1] + v[1]
@@ -96,7 +96,7 @@ class Court:
                 else:
                     key = key + '0'
         else:
-            for k,v in directions.iteritems():
+            for k,v in direction.iteritems():
                 test_position = [0,0]
                 test_position[0] = player.court_position[0] + v[0]
                 test_position[1] = player.court_position[1] + v[1]
@@ -114,8 +114,6 @@ class Court:
                             key = key + '0'
                 else:
                     key = key + '0'
-        key = self.ball_key(player, ball, key)
-        key = self.time_key(shot_clock, time, key)
         return key
             
     
