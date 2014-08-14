@@ -161,14 +161,13 @@ class Court:
         
     #this is a test for the off_ball brain key.
     def off_key(self, player, ball, shot_clock, time):
-        key = ''
-        for id, dude in self.players.iteritems():
-            if player.team_id != dude.team_id:
-                key = key + str(self.nine_court_key(dude.court_position))
-        key = key + str(self.nine_court_key(player.court_position))
+        ball_car_id, ball_car = ball.last_possession, self.players[ball.last_possession]
+        key = str(self.nine_court_key(player.court_position)) + str(self.nine_court_key(ball_car.court_position))
+        for id, other in self.players.iteritems():
+            if player.team_id == other.team_id and other.player_id != player.player_id and other.player_id != ball_car_id:
+            key = key + str(self.nine_court_key(other.court_position))
         key = self.ball_key(player, ball, key)
-        key = self.time_key(shot_clock, time, key)
-        return key
+        return self.time_key(shot_clock, time, key)
     
     #this method is to generate the passing sense key.
     def pass_key(self, player, receiver, ball, shot_clock, time):

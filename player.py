@@ -47,6 +47,22 @@ radial_directions = {
         'forward': [1,-1]
         },
     }
+    
+off_ball_dest = {
+    '1': [0,1],
+    '2': [3,2],
+    '3L': [6,2],
+    'Bas': [7,1],
+    '3R': [8,2],
+    '4': [11,2],
+    '5': [14,1],
+    '6O': [0,8],
+    '6I': [4,4],
+    '7I': [7,4],
+    '7O': [7,8],
+    '8I': [10,4],
+    '8O': [14,8]
+    }
 
 class Player():
     #This class is designed to give a player the functions needed to operate in the game
@@ -122,21 +138,17 @@ class Player():
     #so after a possession the actions can be reinforced with the results; the actions list is the list of all possible actions the player can take off ball and keep
     #this is to be used to populate new keys in the dictionaries.
     keep_dict = {}
-    pass_dict = {}
     shoot_dict = {}
     defense_dict = {}
     off_ball_dict = {}
     ledger = 0
-    post_actions = ['back', 'left', 'right', 'go_to_faceup']
+    post_actions = ['back', 'spin_left', 'spin_right', 'go_to_faceup']
     face_actions = ['go_to_post']
-    for x in directions:
+    off_ball_options = ['go_to_post', 'back']
+    for x in radial_directions['in_front']:
         face_actions.append(x)
-    
-    #This method takes the sense input for passes and returns the expected value for that key; it also adds the key if the key is not present
-    def pass_value_retrieve(self, key):
-        if key not in self.pass_dict:
-            self.pass_dict[key] = (1,1)
-        return float(self.pass_dict[key][0])/float(self.pass_dict[key][1])
+    for x in off_ball_dest:
+        off_ball_options.append(x)
     
     #this method takes the sense input for shooting and returns the expected value for that key
     def shoot_value_retrieve(self, key):
@@ -168,24 +180,22 @@ class Player():
         return current_action
         
     #this method is determine the the off_ball key value and actions
-    def off_ball_value_retrieve(self, key):
+    def off_ball_value_retrieve(self, key, ball, court):
         if key not in self.off_ball_dict:
             start_value = {}
-            for action in self.post_actions:
+            for action in self.off_ball_options:
                 start_value[action] = (1,1)
-            for x in self.face_actions:
-                start_value[x] = (1,1)
             self.off_ball_dict[key] = start_value
         
         current_action = [0,-10000]
         for k,v in self.off_ball_dict[key].iteritems():
             x_value = float(v[0])/float(v[1])
-            if self.post_up == True and k in self.post_actions:
-                if current_action[1] < x_value or current_action[1] == 0:
-                    current_action[0], current_action[1] = k, x_value
-            elif self.post_up == False and k in self.face_actions:
+            if k != 'back' and self.post_up == False and self.post_defender != 0:
                 if current_action[1] < x_value:
                     current_action[0], current_action[1] = k, x_value
+            elif self.post_man == True and self.go_post(ball, court, True) == True:
+                if current_action[1] < x_value:
+                    current_action[0], current_action[1] = 'go_to_post', x_value
         
         return current_action
         
@@ -237,12 +247,12 @@ class Player():
         
         #the decision is being sent to the controller
         if choice[0] == 'keep':
-            if choice[2] != 'left' or choice[2] != 'back' or choice[2] != 'right':
+            if choice[2] != 'spin_left' or choice[2] != 'back' or choice[2] != 'spin_right':
                 self.off_controller(keep[2], ball, court)
             else:
                 if self.post_defender != 0:
                     self.off_controller('post', ball, court, keep[2])
-                    if action[0] == 'left' or action[0] == 'right':
+                    if action[0] == 'spin_left' or action[0] == 'spin_right':
                         self.off_controller('go_to_faceup', ball, court)
             self.ledger.append((choice[0],choice[1],choice[2]))
         elif choice[0] == 'pass':
@@ -277,11 +287,11 @@ class Player():
     #this is the off_ball brain; well you get it...
     def off_ball_brain(self, ball, court, shot_clock, time):
         the_key = court.off_key(self, ball, shot_clock, time)
-        action = self.off_ball_value_retrieve(the_key)
-        if action[0] == 'back' or action[0] == 'left' or action[0] == 'right' and self.post_defender != 0:
-            self.off_ball_controller('post', ball, court, action[0])
-            if action[0] == 'left' or action[0] == 'right':
-                self.off_ball_controller('go_to_faceup', ball, court)
+        action = self.off_ball_value_retrieve(the_key, ball, court)
+        if action[0] == 'back' and self.post_defender != 0:
+            self.off_ball_controller('back', ball, court)
+        elif self.post_up == True and action[0] != 'back':
+            self.off_ball_controller('go_to_faceup', ball, court)
         else:
             self.off_ball_controller(action[0], ball, court)
         self.ledger.append(['off_ball', the_key, action[0]])
@@ -593,7 +603,7 @@ class Player():
     #this function is to move the player from their current position to their destination
     #while checking to see if their are any player is the way; for right now I am presuming
     #that the player will ONLY MOVE ONE BLOCK; 7/13 this function can now operate with a destination greater than one block away
-    def move_to(self, ball, court, dest_return=False):
+    def move_to(self, ball, court, dest_return=False, dodge=False):
         old_dest = [0,0]
         if dest_return == True:
             old_dest[0], old_dest[1] = self.destination[0], self.destination[1]
@@ -639,11 +649,17 @@ class Player():
                         self.move(x)
                     
                 court.update_player_pos()
-
-            if self.has_ball == False:
-                self.pick_up_ball(ball, court)
-            else:
-                ball.update_pos(self.court_position)
+                if self.has_ball == False:
+                    self.pick_up_ball(ball, court)
+                else:
+                    ball.update_pos(self.court_position)
+            elif dodge == True:
+                fate = random.randint(1,100)
+                if fate < 50:
+                    fate = 'right'
+                else:
+                    fate = 'left'
+                self.radial_interpret(ball, court, fate, True)
 
     def pick_up_ball(self, ball, court):
         pick_up = False
@@ -743,8 +759,8 @@ class Player():
         if self.distance_between_players(opponent) < 2:
             post_poss = {
                 'back': 0,
-                'right': 0,
-                'left': 0
+                'spin_right': 0,
+                'spin_left': 0
                 }
                 
             back_d = [opponent.court_position[0] - self.court_position[0], opponent.court_position[1] - self.court_position[1]]
@@ -755,21 +771,21 @@ class Player():
             if back_d[0] == 0:
                 for direction,code in directions.iteritems():
                     if code == [-1, back_d[1]]:
-                        post_poss['right'] = direction
+                        post_poss['spin_right'] = direction
                     if code == [1, back_d[1]]:
-                        post_poss['left'] = direction
+                        post_poss['spin_left'] = direction
             elif back_d[1] == 0:
                 for direction,code in directions.iteritems():
                     if code == [back_d[0], -1]:
-                        post_poss['right'] = direction
+                        post_poss['spin_right'] = direction
                     if code == [back_d[0], 1]:
-                        post_poss['left'] = direction
+                        post_poss['spin_left'] = direction
             else:
                 for direction,code in directions.iteritems():
                     if code == [back_d[0], 0]:
-                        post_poss['right'] = direction
+                        post_poss['spin_right'] = direction
                     if code == [0, back_d[1]]:
-                        post_poss['left'] = direction
+                        post_poss['spin_left'] = direction
             
             return post_poss
         else:
@@ -780,12 +796,17 @@ class Player():
         self.face_up, self.post_up = self.post_up, self.face_up
         
     #this method checks if the opponent of the offense_player is within post up range to post-up
-    def go_post(self, ball, court):
+    def go_post(self, ball, court, check=False):
         _temp = court.players_between(ball, self.court_position)
         for k,v in _temp.iteritems():
             if court.players[v].def_focus == self.player_id and self.distance_between_players(court.players[v]) < 2:
                 self.post_defender = v
-                self.switch_up()
+                if check == False:
+                    self.switch_up()
+                else:
+                    return True
+        else:
+            return False
         
     #This method is to take the player, opponent, and a post direction (back, left, right) and process this into a movement; with a return
     #value on the speed post moves to determine mimicry.
@@ -811,7 +832,7 @@ class Player():
         self.move_to(ball, court)
         
     #this function is used to convert a radial direction to the players destination so that the move_to function can work
-    def radial_interpret(self, ball, court, command=None):
+    def radial_interpret(self, ball, court, command=None, dodge=False):
         forward = self.move_to(ball, court, True)
         direction = ''
         if foward[0] == 0:
@@ -835,7 +856,7 @@ class Player():
                 dest[0] = dict[command[0]][0] + dict[command[1]][0]
                 dest[1] = dict[command[0]][1] + dict[command[1]][1]
             self.destination[0], self.destination[1] = self.court_position[0] + dest[0], self.court_position[1] + dest[1]
-            self.move_to(ball, court)
+            self.move_to(ball, court, False, dodge)
         else:
             return direction
         
@@ -879,14 +900,13 @@ class Player():
             self.on_ball_d(ball_handler, ball, court, True)
             
     #this method is the controller for the off_ball actions of a player
-    def off_ball_controller(self, command, ball, court, sub_command=None):
-        if command in directions:
-            self.destination[0] = self.court_position[0] + directions[command][0]
-            self.destination[1] = self.court_position[1] + directions[command][1]
+    def off_ball_controller(self, command, ball, court):
+        if command in off_ball_dest:
+            self.destination[0], self.destination[1] = off_ball_dest[command][0], off_ball_dest[command][1]
             self.move_to(ball, court)
-        elif command == 'post':
+        elif command == 'back':
             if self.post_up == True:
-                self.post_move(sub_command, ball, court)
+                self.post_move('back', ball, court)
         elif command == 'go_to_post':
             if self.post_up == False:
                 self.go_post(ball, court)
