@@ -863,10 +863,8 @@ class Player():
     #This method is the controller of the players action; that is to say the 'brain' will output a string which will then go into this method
     #where the corresponding action will be executed.
     def off_controller(self, command, ball, court, sub_command=None):
-        if command in directions:
-            self.destination[0] = self.court_position[0] + directions[command][0]
-            self.destination[1] = self.court_position[1] + directions[command][1]
-            self.move_to(ball, court)
+        if command in radial_directions['in_front']:
+            self.radial_interpret(ball, court, command)
             self.dribble_move(ball, court)
         elif command == 'post':
             if self.post_up == True:
