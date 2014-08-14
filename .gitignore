@@ -1,3 +1,5 @@
 reset_test.py
 Test_game.py
 tkin_test.py
+*.pyc
+big_curve.csv
