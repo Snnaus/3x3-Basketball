@@ -95,7 +95,7 @@ class Court:
         return key
     
     #this method is to create the proximity sensory key. It takes the players court_position as the input. This is for the offensive and off_ball controllers.
-    def proximity_key(self, player, ball, shot_clock, time, shot=False):
+    def proximity_key(self, player, ball, shot=False):
         key = ''
         direction = radial_directions[player.radial_interpret(ball, court)]
         if shot == False:
@@ -168,20 +168,38 @@ class Court:
             key = key + str(self.nine_court_key(other.court_position))
         key = self.ball_key(player, ball, key)
         return self.time_key(shot_clock, time, key)
-    
-    #this method is to generate the passing sense key.
-    def pass_key(self, player, receiver, ball, shot_clock, time):
-        key = str(self.nine_court_key(player.court_position)) + str(self.nine_court_key(receiver.court_position))
-        between = self.players_between(ball, receiver.court_position, player.court_position)
-        between_bin = '0'
-        for k,v in between.iteritems():
-            if self.players[v].team_id != player.team_id:
-                between_bin = '1'
-                break
-        key = key + between_bin
-        key = self.ball_key(player, ball, key)
-        key = self.time_key(shot_clock, time, key)
-        return key
+
+        
+    #this method takes the player and checks if his team-mates are more open that he is. If they are he will pass it to him; I plan to add parameters
+    #to this later to augment the choices, i.e. if a target is a slasher give him the ball if they are equally open.
+    def openness_check(self, player, ball):
+        pass_ball = False
+        choice = [0,-50]
+        options = {}
+        self = 0
+        for id,dude in self.players.iteritems():
+            if dude.team_id == player.team_id:
+                open_num = 0
+                for k,v in self.players.iteritems():
+                    if v.team_id != player.team_id and v.distance_between_players(dude) < 2:
+                        open_num -= 1
+                between = self.players_between(ball, dude.court_position, player.court_position)
+                for k,v in between.iteritems():
+                    if self.players[v].team_id != player.team_id:
+                        open_num -= 1
+                        break
+                key = self.proximity_key(dude, ball, True)
+                expect = dude.shoot_value_retrieve(key)
+                if dude.player_id != player.player_id:
+                    options[id] = [expect, open_num]
+                else:
+                    self = open_num
+                                
+        
+        for key,value in options.iteritems():
+            if value[1] > self and value[1] > choice[0] and value[0] > choice[0]:
+                pass_ball, choice[0], choice[1] = key, value[0], value[1]
+        return pass_ball
      
     #this method is to generate the defensive sense key.
     def def_key(self, player, opponent, ball, ball_car, shot_clock, time):
