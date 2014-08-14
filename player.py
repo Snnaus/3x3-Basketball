@@ -95,7 +95,7 @@ class Player():
     #offensive skills
     layup = 10
     dunk = False
-    jump_shooting = 0
+    jump_shooting = 10
     three_modifier = 0
     ball_handle = 10
     passing = 10
@@ -129,6 +129,7 @@ class Player():
     on_defense = False
     def_focus = 0
     post_defender = 0
+    first_turn = False
     
     #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     
@@ -157,7 +158,7 @@ class Player():
         return float(self.shoot_dict[key][0])/float(self.shoot_dict[key][1])
         
     #this method takes the sense input for keep/drive ball and compares all the expected values; it returns the highest expected value and the action corresponding.
-    #[action, expected value]
+    #[action, expected value]; 8/14 Changed it to only return the action.
     def keep_value_retrieve(self, key):
         if key not in self.keep_dict:
             start_value = {}
@@ -177,7 +178,7 @@ class Player():
                 if current_action[1] < x_value or current_action[1] == 0:
                     current_action[0], current_action[1] = k, x_value
         
-        return current_action
+        return current_action[0]
         
     #this method is determine the the off_ball key value and actions
     def off_ball_value_retrieve(self, key, ball, court):
@@ -190,7 +191,7 @@ class Player():
         current_action = [0,-10000]
         for k,v in self.off_ball_dict[key].iteritems():
             x_value = float(v[0])/float(v[1])
-            if k != 'back' and self.post_up == False and self.post_defender != 0:
+            if k != 'back' or self.post_up == True and self.post_defender != 0:
                 if current_action[1] < x_value:
                     current_action[0], current_action[1] = k, x_value
             elif self.post_man == True and self.go_post(ball, court, True) == True:
@@ -198,52 +199,39 @@ class Player():
                     current_action[0], current_action[1] = 'go_to_post', x_value
         
         return current_action
-        
-    #this method is to be used to take the pass_key of the players team-mates and return the highest expected value of the two. It returns the key, player_id of target, 
-    #and the expected value. [key, player_id, expected value]
-    def pass_expected_value(self, court, ball, shot_clock, time):
-        possible = []
-        for id,player in court.players.iteritems():
-            if player.player_id != self.player_id and player.team_id == self.team_id:
-                #appends a list with the [sense_key, player_id]
-                possible.append([court.pass_key(self, player, ball, shot_clock, time), player.player_id])
-        
-        best_opt = 0
-        for options in possible:
-            options.append(self.pass_value_retrieve(options[0]))
-            if best_opt == 0 or options[2] > best_opt[2]:
-                best_opt = options
-        return best_opt
             
         
-    #this is the offensive brain of the player; here is were the sense keys are generated, used to come up with a decision, and then sent to the controller.
-    def offense_brain(self, ball, court, shot_clock, time):
-        #[identifier, key, action(only for keep), expected value]
-        keep = ['keep',0,0,0]
-        passs = ['pass',0,0]
+    #this is the offensive brain of the player; here is were the sense keys are generated, used to come up with a decision, and then sent to the controller; 
+    #threshold value must be a float; the player can only pass on the first turn of a second.
+    def offense_brain(self, ball, court, shot_clock, time, threshold_value):
+        the_time = shot_clock
+        if time < shot_clock:
+            the_time = time
+        threshold = (threshold_value/10)*the_time
+        #print threshold
+        
+        #[identifier, key, action(only for keep)/expected value(for shoot)]
+        keep = ['keep',0,0]
         shoot = ['shoot',0,0]
-        #generating keys
-        keep[1] = court.proximity_key(self, ball, shot_clock, time)
-        shoot[1] = court.proximity_key(self, ball, shot_clock, time, True)
+        passs = ['pass', 0]
+        #generating shooting key
+        shoot[1] = court.proximity_key(self, ball, True)
         shoot[2] = self.shoot_value_retrieve(shoot[1])
         
-        #here I am applying the pass and keep expected values to the comparative lists above.
-        keep_act = self.keep_value_retrieve(keep[1])
-        keep[2], keep[3] = keep_act[0], keep_act[1]
-        
-        pass_stuff = self.pass_expected_value(court, ball, shot_clock, time)
-        pass_target = pass_stuff[1]
-        passs[1], passs[2] = pass_stuff[0], pass_stuff[2]
-        
-        #print keep[3], passs[2], shoot[2]
         #here is where the program will compare the expected values of the actions and make a decision based on the highest expected value.
-        choice = passs
-        expected = passs[2]
-        if keep[3] > expected and ball.picked_up_dribble == False:
-            choice = keep
-            expected = keep[3]
-        if shoot[2] > expected and ball.team_id_possession == self.team_id:
+        choice = 0
+        if shoot[2] >= threshold:
             choice = shoot
+        else:
+            check = court.openness_check(self, ball)
+            if check == False or self.first_turn == False and self.point_man == False:
+                keep[1] = court.proximity_key(self, ball)
+                keep[2] = self.keep_value_retrieve(keep[1])
+                choice = keep
+            else:
+                passs[1] = check
+                choice = passs
+        self.first_turn = False
         
         #the decision is being sent to the controller
         if choice[0] == 'keep':
@@ -256,8 +244,7 @@ class Player():
                         self.off_controller('go_to_faceup', ball, court)
             self.ledger.append((choice[0],choice[1],choice[2]))
         elif choice[0] == 'pass':
-            self.off_controller('pass', ball, court, court.players[pass_target])
-            self.ledger.append((choice[0],choice[1]))
+            self.off_controller('pass', ball, court, court.players[passs[1]])
         else:
             self.off_controller('shoot', ball, court)
             self.ledger.append((choice[0],choice[1]))
@@ -284,50 +271,43 @@ class Player():
         self.def_controller(choice[0], opponent, ball, court, ball_car)
         self.ledger.append(['defense', choice[1], choice[0]])
         
-    #this is the off_ball brain; well you get it...
-    def off_ball_brain(self, ball, court, shot_clock, time):
-        the_key = court.off_key(self, ball, shot_clock, time)
+    #this is the off_ball brain; well you get it... The player can only make a destination decision at the beginning of a second.
+    def off_ball_brain(self, ball, court):
+        the_key = court.off_key(self, ball)
         action = self.off_ball_value_retrieve(the_key, ball, court)
-        if action[0] == 'back' and self.post_defender != 0:
-            self.off_ball_controller('back', ball, court)
-        elif self.post_up == True and action[0] != 'back':
-            self.off_ball_controller('go_to_faceup', ball, court)
+        if self.first_turn == True:
+            if action[0] == 'back' and self.post_defender != 0:
+                self.off_ball_controller('back', ball, court)
+            elif self.post_up == True and action[0] != 'back':
+                self.off_ball_controller('go_to_faceup', ball, court)
+            else:
+                self.off_ball_controller(action[0], ball, court)
+            self.ledger.append(['off_ball', the_key, action[0]])
+            self.first_turn = False
         else:
-            self.off_ball_controller(action[0], ball, court)
-        self.ledger.append(['off_ball', the_key, action[0]])
+            self.move_to(ball, court)
 
     #this method is used to take the player's 'ledger' and adds the plays result to the corresponding dictionaries
     def ledger_reader(self, court):
         for event in self.ledger:
             key = event[1]
             new = [0,0]
-            old_points = court.points_last
             if event[0] == 'shoot':
-                if court.points_last == 0:
-                    court.points_last = -3
-                elif court.points_last > 0:
-                    court.points_last = court.points_last*2
                 new[0], new[1] = self.shoot_dict[key][0] + court.points_last, self.shoot_dict[key][1] + 1
                 self.shoot_dict[key] = (int(new[0]),int(new[1]))
-            elif event[0] == 'pass':
-                if court.points_last == 0:
-                    court.points_last += 1
-                elif court.points_last > 0:
-                    court.points_last += 5
-                new[0], new[1] = self.pass_dict[key][0] + court.points_last, self.pass_dict[key][1] + 1
-                self.pass_dict[key] = (int(new[0]),int(new[1]))
             elif event[0] == 'defense':
                 new[0], new[1] = self.defense_dict[key][event[2]][0] + court.points_last, self.defense_dict[key][event[2]][1] + 1
                 self.defense_dict[key][event[2]] = (int(new[0]),int(new[1]))
             elif event[0] == 'off_ball':
-                '''if event[2] == 'south' or event[2] == 'south_east' or event[2] == 'south_west' and court.points_last >= 0:
-                    court.points_last += 1'''
+                old_points = court.points_last
+                if court.scorer != self.player_id:
+                    court.points_last = 0.50
                 new[0], new[1] = self.off_ball_dict[key][event[2]][0] + court.points_last, self.off_ball_dict[key][event[2]][1] + 1
                 self.off_ball_dict[key][event[2]] = (int(new[0]),int(new[1]))
+                court.points_last = old_points
             elif event[0] == 'keep':
                 new[0], new[1] = self.keep_dict[key][event[2]][0] + court.points_last, self.keep_dict[key][event[2]][1] + 1
                 self.keep_dict[key][event[2]] = (int(new[0]),int(new[1]))
-            court.points_last = old_points
             self.ledger = 0
             
             
@@ -445,6 +425,7 @@ class Player():
                     #this is a placeholder text
                     print 'Layup made'
                     court.points_last = 1
+                    court.scorer = self.player_id
                 else:
                     ball.rebound(court)
             else:
@@ -456,6 +437,7 @@ class Player():
                         #this is a placeholder text
                         print "Jump Shot made"
                         court.points_last = 1
+                        court.scorer = self.player_id
                     else:
                         ball.rebound(court, distance_from_basket)
                 else:
@@ -465,6 +447,7 @@ class Player():
                         #this is a placeholder text
                         print "Made the Three"
                         court.points_last = 2
+                        court.scorer = self.player_id
                     else:
                         ball.rebound(court, distance_from_basket)
                         
@@ -477,9 +460,9 @@ class Player():
         defense_modifier = 0
         distance = self.distance_between_players(opponent)
         if distance < 2:
-            defense_modifier = (self.height + random.randint(0, self.jump))
+            defense_modifier = (self.height + random.randint(0, self.jump))*2
         elif distance < 3:
-            defense_modifier = (self.height + random.randint(0,self.jump))/2
+            defense_modifier = (self.height + random.randint(0,self.jump))
             
         return defense_modifier
             
@@ -835,13 +818,13 @@ class Player():
     def radial_interpret(self, ball, court, command=None, dodge=False):
         forward = self.move_to(ball, court, True)
         direction = ''
-        if foward[0] == 0:
+        if forward[0] == 0:
             direction = 'in_front'
         elif forward[1] == 0 and self.court_position[0] <= 7:
             direction = 'right_of'
         elif forward[1] == 0:
             direction = 'left_of'
-        elif foward[0] == -1:
+        elif forward[0] == -1:
             direction = 'left_corner'
         else:
             direction = 'right_corner'

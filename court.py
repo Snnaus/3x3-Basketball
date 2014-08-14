@@ -23,6 +23,7 @@ class Court:
     
     #this attribute tells the game how many points the last possession generated.
     points_last = 0
+    scorer = 0
     score = 0
     
     #this is filling the dictionary with the position keys, AKA 'the board'; I had to make this bigger because of a keyerror when rebounds went out of bounds
@@ -97,7 +98,7 @@ class Court:
     #this method is to create the proximity sensory key. It takes the players court_position as the input. This is for the offensive and off_ball controllers.
     def proximity_key(self, player, ball, shot=False):
         key = ''
-        direction = radial_directions[player.radial_interpret(ball, court)]
+        direction = radial_directions[player.radial_interpret(ball, self)]
         if shot == False:
             for k,v in direction.iteritems():
                 test_position = [0,0]
@@ -160,14 +161,13 @@ class Court:
         return key + clear + picked
         
     #this is a test for the off_ball brain key.
-    def off_key(self, player, ball, shot_clock, time):
+    def off_key(self, player, ball):
         ball_car_id, ball_car = ball.last_possession, self.players[ball.last_possession]
         key = str(self.nine_court_key(player.court_position)) + str(self.nine_court_key(ball_car.court_position))
         for id, other in self.players.iteritems():
             if player.team_id == other.team_id and other.player_id != player.player_id and other.player_id != ball_car_id:
-            key = key + str(self.nine_court_key(other.court_position))
-        key = self.ball_key(player, ball, key)
-        return self.time_key(shot_clock, time, key)
+                key = key + str(self.nine_court_key(other.court_position))
+        return key
 
         
     #this method takes the player and checks if his team-mates are more open that he is. If they are he will pass it to him; I plan to add parameters
@@ -176,8 +176,8 @@ class Court:
         pass_ball = False
         choice = [0,-50]
         options = {}
-        self = 0
-        for id,dude in self.players.iteritems():
+        keep = 0
+        for id, dude in self.players.iteritems():
             if dude.team_id == player.team_id:
                 open_num = 0
                 for k,v in self.players.iteritems():
@@ -193,12 +193,15 @@ class Court:
                 if dude.player_id != player.player_id:
                     options[id] = [expect, open_num]
                 else:
-                    self = open_num
+                    keep = open_num
                                 
-        
         for key,value in options.iteritems():
-            if value[1] > self and value[1] > choice[0] and value[0] > choice[0]:
+            #print keep, value
+            if ball.picked_up_dribble == True and choice[0] == 0:
+                pass_ball, choice[0], choice[1] = key, value[0], value[1]                
+            elif value[1] > keep and value[1] > choice[1] and value[0] > choice[0]:
                 pass_ball, choice[0], choice[1] = key, value[0], value[1]
+        #print pass_ball
         return pass_ball
      
     #this method is to generate the defensive sense key.
@@ -397,9 +400,10 @@ class Court:
                 new_position = {}
                 for defender,offense in defense.iteritems():
                     self.players[defender].court_position = self.players[defender].on_ball_destination(self.players[offense],True)
-        
+     
         self.update_player_pos()
         sequence.append(self.tk_frame())
+        
         ran_pick = random.randint(1,3)
         player = self.players[offense_pl[ran_pick-1]]
         player.has_ball = True
@@ -423,6 +427,7 @@ class Court:
         highest = 0
         for id,player in self.players.iteritems():
             player.move_count = round(player.speed/4)
+            player.first_turn = True
             if player.has_ball == True:
                 player.move_count = int(player.move_count*0.75)
             if player.move_count > highest:
@@ -432,7 +437,7 @@ class Court:
             
     #this method is for the 'second' mechanic; a second (which represents the unit of time) is a bundle of turns by the players
     #this method executes those turns
-    def game_second(self, ball, sequence, shot_clock, time):
+    def game_second(self, ball, sequence, shot_clock, time, threshold=0.30):
         if ball.possession == False:
             for x in range(2):
                 self.loose_ball_chase(ball)
@@ -446,11 +451,11 @@ class Court:
                     if self.players[order[x]].move_count >= turn_count:
                         current_player = self.players[order[x]]
                         if current_player.has_ball == True:
-                            current_player.offense_brain(ball, self, shot_clock, time)
+                            current_player.offense_brain(ball, self, shot_clock, time, threshold)
                         elif current_player.on_defense == True:
                             current_player.defence_brain(ball, self, shot_clock, time)
                         else:
-                            current_player.off_ball_brain(ball, self, shot_clock, time)
+                            current_player.off_ball_brain(ball, self)
                         self.update_player_pos()
                         current_player.move_count -= 1
                 sequence.append(self.tk_frame())
@@ -504,12 +509,12 @@ class Court:
                     shot_made = True
                     break
                 if shot_clock <= 0:
-                    self.points_last = -2
+                    #self.points_last = -2
                     shot_clock_violation = True
                     break
                 elif seconds <= 0 or ball.turnt_over == True or out_bounds == True:
-                    if out_bounds == True:
-                        self.points_last = -2
+                    '''if out_bounds == True:
+                        self.points_last = -2'''
                     break
             for id,player in self.players.iteritems():
                 player.ledger_reader(self)
