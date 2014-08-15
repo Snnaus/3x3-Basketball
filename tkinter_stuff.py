@@ -46,4 +46,4 @@ class Court_Animation():
                     y_count += 1
                 x_count += 1
             self.frame_count += 1
-            self.root.after(200, self.animate)
+            self.root.after(100, self.animate)

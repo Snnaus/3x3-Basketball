@@ -48,20 +48,33 @@ radial_directions = {
         },
     }
     
-off_ball_dest = {
-    '1': [0,1],
-    '2': [3,2],
-    '3L': [6,2],
-    'Bas': [7,1],
-    '3R': [8,2],
-    '4': [11,2],
-    '5': [14,1],
-    '6O': [0,8],
-    '6I': [4,4],
-    '7I': [7,4],
-    '7O': [7,8],
-    '8I': [10,4],
-    '8O': [14,8]
+court_dest = {
+    'normal': {
+        'a': [3,1],
+        'b': [4,5],
+        'c': [7,5],
+        'e': [10,5],
+        'g': [11,1]
+        },
+    'three': {
+        '3a': [0,2],
+        '3b': [2,6],
+        '3c': [7,8],
+        '3d': [12,6],
+        '3e': [14,2]
+        },
+    'post': {
+        'pa': [5,1],
+        'pb': [5,3],
+        'pc': [7,3],
+        'pd': [9,3],
+        'pe': [9,1]
+        },
+    'slash': {
+        'sa': [5,1],
+        'sb': [7,1],
+        'sc': [9,1]
+        }
     }
 
 class Player():
@@ -139,17 +152,31 @@ class Player():
     #so after a possession the actions can be reinforced with the results; the actions list is the list of all possible actions the player can take off ball and keep
     #this is to be used to populate new keys in the dictionaries.
     keep_dict = {}
+    keep_upp_dict = {}
     shoot_dict = {}
     defense_dict = {}
     off_ball_dict = {}
+    off_ball_upp_dict = {}
+    post_dict = {}
     ledger = 0
-    post_actions = ['back', 'spin_left', 'spin_right', 'go_to_faceup']
-    face_actions = ['go_to_post']
-    off_ball_options = ['go_to_post', 'back']
-    for x in radial_directions['in_front']:
-        face_actions.append(x)
-    for x in off_ball_dest:
-        off_ball_options.append(x)
+    post_actions = ['back', 'spin_left', 'spin_right']
+    
+    #this method is used to determine which action to take in the post.
+    def post_value_retrieve(self, court, has_ball=False):
+        key = court.post_key(self, has_ball)
+        if key not in self.post_dict:
+            start = {}
+            for x in post_actions:
+                start[x] = (1,1)
+            self.post_dict[key] = start
+            
+        current_action = [0, -10000]
+        for k,v in self.post_dict[key]:
+            x_value = float(v[0])/float(v[1])
+            if current_action[1] < x_value:
+                current_action[0], current_action[1] = k, x_value
+        self.ledger.append(('post', key, current_action[0]))
+        return current_action[0]
     
     #this method takes the sense input for shooting and returns the expected value for that key
     def shoot_value_retrieve(self, key):
@@ -159,46 +186,42 @@ class Player():
         
     #this method takes the sense input for keep/drive ball and compares all the expected values; it returns the highest expected value and the action corresponding.
     #[action, expected value]; 8/14 Changed it to only return the action.
-    def keep_value_retrieve(self, key):
+    def keep_value_retrieve(self, key, style):
         if key not in self.keep_dict:
             start_value = {}
-            for action in self.post_actions:
-                start_value[action] = (1,1)
-            for x in self.face_actions:
-                start_value[x] = (1,1)
+            for style,dict in court_dest.iteritems():
+                for place in dict:
+                    start_value[place] = (1,1)
             self.keep_dict[key] = start_value
         
         current_action = [0,-10000]
         for k,v in self.keep_dict[key].iteritems():
             x_value = float(v[0])/float(v[1])
-            if self.post_up == True and k in self.post_actions:
-                if current_action[1] < x_value or current_action[1] == 0:
-                    current_action[0], current_action[1] = k, x_value
-            elif self.post_up == False and k in self.face_actions:
-                if current_action[1] < x_value or current_action[1] == 0:
+            if k in court_dest[style]:
+                if current_action[1] < x_value:
                     current_action[0], current_action[1] = k, x_value
         
         return current_action[0]
         
     #this method is determine the the off_ball key value and actions
-    def off_ball_value_retrieve(self, key, ball, court):
-        if key not in self.off_ball_dict:
+    def off_ball_value_retrieve(self, key, style):
+        if key not in self.keep_dict:
             start_value = {}
-            for action in self.off_ball_options:
-                start_value[action] = (1,1)
+            for style,dict in court_dest.iteritems():
+                if style != 'slash':
+                    for place in dict:
+                        start_value[place] = (1,1)
             self.off_ball_dict[key] = start_value
         
         current_action = [0,-10000]
         for k,v in self.off_ball_dict[key].iteritems():
             x_value = float(v[0])/float(v[1])
-            if k != 'back' or self.post_up == True and self.post_defender != 0:
+            if k in court_dest[style]:
                 if current_action[1] < x_value:
                     current_action[0], current_action[1] = k, x_value
-            elif self.post_man == True and self.go_post(ball, court, True) == True:
-                if current_action[1] < x_value:
-                    current_action[0], current_action[1] = 'go_to_post', x_value
+            
         
-        return current_action
+        return current_action[0]
             
         
     #this is the offensive brain of the player; here is were the sense keys are generated, used to come up with a decision, and then sent to the controller; 
@@ -218,36 +241,36 @@ class Player():
         shoot[2] = self.shoot_value_retrieve(shoot[1])
         
         #here is where the program will compare the expected values of the actions and make a decision based on the highest expected value.
-        choice = 0
         if shoot[2] >= threshold:
-            choice = shoot
+            self.off_controller('shoot', ball, court)
+            self.ledger.append((shoot[0],shoot[1]))
         else:
             check = court.openness_check(self, ball)
             if check == False or self.first_turn == False and self.point_man == False:
-                keep[1] = court.proximity_key(self, ball)
-                keep[2] = self.keep_value_retrieve(keep[1])
-                choice = keep
+                append = True
+                keep[1] = court.keep_key(self, ball)
+                the_style = self.style_chooser(keep[1], True)
+                keep[2] = self.keep_value_retrieve(keep[1], the_style)
+                self.ledger.append(('keep_style', keep[1], the_style))
+                if the_style == 'post' and self.distance_from_basket() < 4 and self.post_up == False:
+                    self.off_controller('go_to_post', ball, court)
+                elif the_style == 'post' and self.post_up == True and self.post_defender != 0:
+                    self.off_controller('post', ball, court)
+                elif self.post_up == True and style != 'post':
+                    self.off_controller('go_to_faceup', ball, court)
+                elif self.first_turn == True:
+                    self.off_controller(keep[2], ball, court, the_style)
+                    self.first_turn = False
+                else:
+                    self.move_to
+                    append = False
+                if append == True:
+                    self.ledger.append((keep[0], keep[1], keep[2]))
             else:
                 passs[1] = check
-                choice = passs
-        self.first_turn = False
-        
-        #the decision is being sent to the controller
-        if choice[0] == 'keep':
-            if choice[2] != 'spin_left' or choice[2] != 'back' or choice[2] != 'spin_right':
-                self.off_controller(keep[2], ball, court)
-            else:
-                if self.post_defender != 0:
-                    self.off_controller('post', ball, court, keep[2])
-                    if action[0] == 'spin_left' or action[0] == 'spin_right':
-                        self.off_controller('go_to_faceup', ball, court)
-            self.ledger.append((choice[0],choice[1],choice[2]))
-        elif choice[0] == 'pass':
-            self.off_controller('pass', ball, court, court.players[passs[1]])
-        else:
-            self.off_controller('shoot', ball, court)
-            self.ledger.append((choice[0],choice[1]))
-            
+                self.off_controller('pass', ball, court, court.players[passs[1]])
+                self.first_turn = False
+                
     #this is the defensive brain of the player; here the keys are generated, decisions made, and sent to the controller
     def defence_brain(self, ball, court, shot_clock, time):
         opponent = court.players[court.defense_pairs[self.team_id][self.player_id]]
@@ -273,14 +296,18 @@ class Player():
     #this is the off_ball brain; well you get it... The player can only make a destination decision at the beginning of a second.
     def off_ball_brain(self, ball, court):
         the_key = court.off_key(self, ball)
-        action = self.off_ball_value_retrieve(the_key, ball, court)
+        the_style = self.style_chooser(the_key)
+        action = self.off_ball_value_retrieve(the_key, the_style)
+        self.ledger.append(('off_style', the_key, the_style))
         if self.first_turn == True or self.destination == self.court_position:
-            if action[0] == 'back' and self.post_defender != 0:
-                self.off_ball_controller('back', ball, court)
-            elif self.post_up == True and action[0] != 'back':
+            if the_style == 'post' and self.distance_from_basket() < 3 and self.post_up == False:
+                self.off_ball_controller('go_to_post', ball, court)
+            elif the_style == 'post' and self.post_up == True and self.post_defender != 0:
+                self.off_ball_controller('post', ball, court)
+            elif self.post_up and the_style != 'post':
                 self.off_ball_controller('go_to_faceup', ball, court)
             else:
-                self.off_ball_controller(action[0], ball, court)
+                self.off_ball_controller(action, ball, court, the_style)
             self.ledger.append(['off_ball', the_key, action[0]])
             self.first_turn = False
         else:
@@ -307,9 +334,63 @@ class Player():
             elif event[0] == 'keep':
                 new[0], new[1] = self.keep_dict[key][event[2]][0] + court.points_last, self.keep_dict[key][event[2]][1] + 1
                 self.keep_dict[key][event[2]] = (int(new[0]),int(new[1]))
-            self.ledger = 0
+            elif event[0] == 'post':
+                new[0], new[1] = self.post_dict[key][event[2]][0] + court.points_last, self.post_dict[key][event[2]][1] + 1
+                self.post_dict[key][event[2]] = (int(new[0]),int(new[1]))
+            elif event[0] == 'keep_style':
+                new[0], new[1] = self.keep_upp_dict[key][event[2]][0] + court.points_last, self.keep_upp_dict[key][event[2]][1] + 1
+                self.keep_upp_dict[key][event[2]] = (int(new[0]),int(new[1]))
+            elif event[0] == 'off_style':
+                new[0], new[1] = self.off_ball_upp_dict[key][event[2]][0] + court.points_last, self.off_ball_upp_dict[key][event[2]][1] + 1
+                self.off_ball_upp_dict[key][event[2]] = (int(new[0]),int(new[1]))
+        self.ledger = 0
             
-            
+    #this method decides a playing style for a player in either the has_ball or off_ball state; returns the style that should be used.
+    def style_chooser(self, key, has_ball=False):
+        if has_ball == False:
+            if key not in self.off_ball_upp_dict:
+                start = {}
+                for k in court_dest:
+                    if k != 'slash':
+                        start[k] = (1,1)
+                self.off_ball_upp_dict[key] = start
+                
+            current_action = [0,-10000]
+            for k,v in self.off_ball_upp_dict[key].iteritems():
+                x_value = float(v[0])/float(v[1])
+                if self.three_shooter == True and k == 'three':
+                    if current_action[1] < x_value:
+                        current_action[0], current_action[1] = k, x_value
+                elif self.post_man == True and k == 'post':
+                    if current_action[1] < x_value:
+                        current_action[0], current_action[1] = k, x_value
+                elif k == 'normal':
+                    if current_action[1] < x_value:
+                        current_action[0], current_action[1] = k, x_value
+            return current_action[0]
+        else:
+            if key not in self.keep_upp_dict:
+                start = {}
+                for k in court_dest:
+                    start[k] = (1,1)
+                self.keep_upp_dict[key] = start
+                
+            current_action = [0,-10000]
+            for k,v in self.keep_upp_dict[key].iteritems():
+                x_value = float(v[0])/float(v[1])
+                if self.three_shooter == True and k == 'three':
+                    if current_action[1] < x_value:
+                        current_action[0], current_action[1] = k, x_value
+                elif self.post_man == True and k == 'post':
+                    if current_action[1] < x_value:
+                        current_action[0], current_action[1] = k, x_value
+                elif self.slasher == True and k == 'slash':
+                    if current_action[1] < x_value:
+                        current_action[0], current_action[1] = k, x_value
+                elif k == 'normal':
+                    if current_action[1] < x_value:
+                        current_action[0], current_action[1] = k, x_value
+            return current_action[0]
             
         
     
@@ -845,12 +926,10 @@ class Player():
     #This method is the controller of the players action; that is to say the 'brain' will output a string which will then go into this method
     #where the corresponding action will be executed.
     def off_controller(self, command, ball, court, sub_command=None):
-        if command in radial_directions['in_front']:
-            self.radial_interpret(ball, court, command)
-            self.dribble_move(ball, court)
-        elif command == 'post':
+        if command == 'post':
             if self.post_up == True:
-                return self.post_move(sub_command, ball, court)
+                post_command = self.post_value_retrieve(ball, court, True)
+                self.post_move(post_command, ball, court)
         elif command == 'go_to_post':
             if self.post_up == False:
                 self.go_post(ball, court)
@@ -863,6 +942,10 @@ class Player():
             self.shoot(defense, ball, court)
         elif command == 'pass':
             self.pass_ball(sub_command, ball, court)
+        else:
+            self.destination[0], self.destination[1] = court_dest[sub_command][command][0], court_dest[sub_command][command][1]
+            self.move_to(ball, court)
+            self.dribble_move(ball, court)
             
     #this method is the controller for the defensive actions; it also sets which player the defender is focusing on, making them susceptible to dribble moves.
     def def_controller(self, command, opponent, ball, court, ball_handler=None):
@@ -880,11 +963,8 @@ class Player():
             self.on_ball_d(ball_handler, ball, court, True)
             
     #this method is the controller for the off_ball actions of a player
-    def off_ball_controller(self, command, ball, court):
-        if command in off_ball_dest:
-            self.destination[0], self.destination[1] = off_ball_dest[command][0], off_ball_dest[command][1]
-            self.move_to(ball, court)
-        elif command == 'back':
+    def off_ball_controller(self, command, ball, court, style=None):
+        if command == 'post':
             if self.post_up == True:
                 self.post_move('back', ball, court)
         elif command == 'go_to_post':
@@ -894,6 +974,9 @@ class Player():
             if self.face_up == False:
                 self.post_defender = 0
                 self.switch_up
+        else:
+            self.destination[0], self.destination[1] = court_dest[style][command][0], court_dest[style][command][1]
+            self.move_to(ball, court)
         
         
         

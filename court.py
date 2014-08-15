@@ -160,7 +160,7 @@ class Court:
             clear = '1'
         return key + clear + picked
         
-    #this is a test for the off_ball brain key.
+    #this is a the new off_ball key that tells the player where his team-mates are on the court.
     def off_key(self, player, ball):
         ball_car_id, ball_car = ball.last_possession, self.players[ball.last_possession]
         key = str(self.nine_court_key(player.court_position)) + str(self.nine_court_key(ball_car.court_position))
@@ -168,8 +168,23 @@ class Court:
             if player.team_id == other.team_id and other.player_id != player.player_id and other.player_id != ball_car_id:
                 key = key + str(self.nine_court_key(other.court_position))
         return key
-
         
+    #this is the new keep key that tells the player where the opponents are on the court.
+    def keep_key(self, player, ball):
+        key = str(self.nine_court_key(player.court_position))
+        for id,other in self.players.iteritems():
+            if player.team_id != other.team_id:
+                key = key + str(self.nine_court_key(other.court_position))
+        return key
+        
+    #this key is for the post brain
+    def post_key(self, player, has_ball):
+        key = str(self.nine_court_key(player.court_position))
+        if has_ball == True:
+            return key + '1'
+        else:
+            return key + '0'
+
     #this method takes the player and checks if his team-mates are more open that he is. If they are he will pass it to him; I plan to add parameters
     #to this later to augment the choices, i.e. if a target is a slasher give him the ball if they are equally open.
     def openness_check(self, player, ball):
@@ -404,21 +419,21 @@ class Court:
         self.update_player_pos()
         sequence.append(self.tk_frame())
         
-        '''ran_pick = random.randint(1,3)
+        ran_pick = random.randint(1,3)
         player = self.players[offense_pl[ran_pick-1]]
         player.has_ball = True
         player.on_defense = False
         ball.possession = True
         ball.last_possession = player.player_id
-        ball.last_touch = player.player_id'''
-        for id,player in self.players.iteritems():
+        ball.last_touch = player.player_id
+        '''for id,player in self.players.iteritems():
             player.has_ball = False
             if player.player_id == self.point_guards[team]:
                 player.has_ball = True
                 player.on_defense = False
                 ball.possession = True
                 ball.last_possession = player.player_id
-                ball.last_touch = player.player_id
+                ball.last_touch = player.player_id'''
         
         
         
@@ -437,7 +452,7 @@ class Court:
             
     #this method is for the 'second' mechanic; a second (which represents the unit of time) is a bundle of turns by the players
     #this method executes those turns
-    def game_second(self, ball, sequence, shot_clock, time, threshold=0.35):
+    def game_second(self, ball, sequence, shot_clock, time, threshold=0.45):
         if ball.possession == False:
             for x in range(2):
                 self.loose_ball_chase(ball)
