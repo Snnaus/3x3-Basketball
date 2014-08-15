@@ -208,7 +208,6 @@ class Player():
         if time < shot_clock:
             the_time = time
         threshold = (threshold_value/10)*the_time
-        #print threshold
         
         #[identifier, key, action(only for keep)/expected value(for shoot)]
         keep = ['keep',0,0]
@@ -275,7 +274,7 @@ class Player():
     def off_ball_brain(self, ball, court):
         the_key = court.off_key(self, ball)
         action = self.off_ball_value_retrieve(the_key, ball, court)
-        if self.first_turn == True:
+        if self.first_turn == True or self.destination == self.court_position:
             if action[0] == 'back' and self.post_defender != 0:
                 self.off_ball_controller('back', ball, court)
             elif self.post_up == True and action[0] != 'back':

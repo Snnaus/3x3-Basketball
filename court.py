@@ -199,7 +199,7 @@ class Court:
             #print keep, value
             if ball.picked_up_dribble == True and choice[0] == 0:
                 pass_ball, choice[0], choice[1] = key, value[0], value[1]                
-            elif value[1] > keep and value[1] > choice[1] and value[0] > choice[0]:
+            elif value[1] >= keep and value[1] > choice[1] and value[0] > choice[0]:
                 pass_ball, choice[0], choice[1] = key, value[0], value[1]
         #print pass_ball
         return pass_ball
@@ -404,21 +404,21 @@ class Court:
         self.update_player_pos()
         sequence.append(self.tk_frame())
         
-        ran_pick = random.randint(1,3)
+        '''ran_pick = random.randint(1,3)
         player = self.players[offense_pl[ran_pick-1]]
         player.has_ball = True
         player.on_defense = False
         ball.possession = True
         ball.last_possession = player.player_id
-        ball.last_touch = player.player_id
-        '''for id,player in self.players.iteritems():
+        ball.last_touch = player.player_id'''
+        for id,player in self.players.iteritems():
             player.has_ball = False
             if player.player_id == self.point_guards[team]:
                 player.has_ball = True
                 player.on_defense = False
                 ball.possession = True
                 ball.last_possession = player.player_id
-                ball.last_touch = player.player_id'''
+                ball.last_touch = player.player_id
         
         
         
@@ -437,7 +437,7 @@ class Court:
             
     #this method is for the 'second' mechanic; a second (which represents the unit of time) is a bundle of turns by the players
     #this method executes those turns
-    def game_second(self, ball, sequence, shot_clock, time, threshold=0.30):
+    def game_second(self, ball, sequence, shot_clock, time, threshold=0.35):
         if ball.possession == False:
             for x in range(2):
                 self.loose_ball_chase(ball)
