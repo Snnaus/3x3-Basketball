@@ -459,9 +459,9 @@ class Player():
         defense_modifier = 0
         distance = self.distance_between_players(opponent)
         if distance < 2:
-            defense_modifier = (self.height + random.randint(0, self.jump))*2
+            defense_modifier = (self.height + random.randint(0, self.jump))
         elif distance < 3:
-            defense_modifier = (self.height + random.randint(0,self.jump))
+            defense_modifier = (self.height + random.randint(0,self.jump))/2
             
         return defense_modifier
             
