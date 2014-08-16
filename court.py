@@ -208,12 +208,10 @@ class Court:
                     keep = open_num
                                 
         for key,value in options.iteritems():
-            #print keep, value
             if ball.picked_up_dribble == True and choice[0] == 0:
                 pass_ball, choice[0], choice[1] = key, value[0], value[1]                
             elif value[1] >= keep and value[1] > choice[1] and value[0] > choice[0]:
                 pass_ball, choice[0], choice[1] = key, value[0], value[1]
-        #print pass_ball
         return pass_ball
      
     #this method is to generate the defensive sense key.
@@ -534,5 +532,4 @@ class Court:
                 self.score += self.points_last
             if seconds <= 0:
                 break
-        print len(sequence)
         #animation = Court_Animation(sequence, self)   

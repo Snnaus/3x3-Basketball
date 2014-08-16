@@ -423,7 +423,7 @@ class Player():
     #first a 'pass' check from the player with the ball, to check for a good pass
     #then a 'hand' check to see if the receiver catches the ball
     def pass_ball(self, target, ball, court):
-        print 'Pass attempted'
+        #print 'Pass attempted'
         ball.picked_up_dribble = False
         fate_pass = random.randint(1,100)
         fate_catch = random.randint(1,60)
@@ -445,7 +445,7 @@ class Player():
                 ball.poss_change(target, court)
                 ball.court_position[0] = target.court_position[0]
                 ball.court_position[1] = target.court_position[1]
-                print 'Pass made'
+                #print 'Pass made'
             else:
                 #this is for a wayward pass, hence why the focal point is on the passer; this could cause some crazy passes like 15 blocks backwards
                 ball.destination[0], ball.destination[1] = self.court_position[0], self.court_position[1]
@@ -503,7 +503,7 @@ class Player():
                 shot_fate = random.randint(1,100)
                 if shot_fate <= 40 + layup_percent - true_modifier:
                     #this is a placeholder text
-                    print 'Layup made'
+                    #print 'Layup made'
                     court.points_last = 1
                     court.scorer = self.player_id
                 else:
@@ -515,7 +515,7 @@ class Player():
                     shot_fate = random.randint(1,100)
                     if shot_fate <= 30 + self.jump_shooting - court_modifier - true_modifier:
                         #this is a placeholder text
-                        print "Jump Shot made"
+                        #print "Jump Shot made"
                         court.points_last = 1
                         court.scorer = self.player_id
                     else:
@@ -525,7 +525,7 @@ class Player():
                     shot_fate = random.randint(1,100)
                     if shot_fate <= self.jump_shooting + self.three_modifier - court_modifier - true_modifier:
                         #this is a placeholder text
-                        print "Made the Three"
+                        #print "Made the Three"
                         court.points_last = 2
                         court.scorer = self.player_id
                     else:
