@@ -3,3 +3,4 @@ Test_game.py
 tkin_test.py
 *.pyc
 big_curve.csv
+*.csv

@@ -152,13 +152,10 @@ class Court:
     
     #this method looks to see if the the ball needs to be cleared and if the ball has been picked up; then attaches it to the key.
     def ball_key(self, player, ball, key):
-        picked = '0'
         clear = '0'
-        if ball.picked_up_dribble == True:
-            picked = '1'
         if player.team_id == ball.team_id_possession:
             clear = '1'
-        return key + clear + picked
+        return key + clear
         
     #this is a the new off_ball key that tells the player where his team-mates are on the court.
     def off_key(self, player, ball):
@@ -167,7 +164,7 @@ class Court:
         for id, other in self.players.iteritems():
             if player.team_id == other.team_id and other.player_id != player.player_id and other.player_id != ball_car_id:
                 key = key + str(self.nine_court_key(other.court_position))
-        return key
+        return self.ball_key(player, ball, key)
         
     #this is the new keep key that tells the player where the opponents are on the court.
     def keep_key(self, player, ball):
@@ -175,7 +172,7 @@ class Court:
         for id,other in self.players.iteritems():
             if player.team_id != other.team_id:
                 key = key + str(self.nine_court_key(other.court_position))
-        return key
+        return self.ball_key(player, ball, key)
         
     #this key is for the post brain
     def post_key(self, player, has_ball):
@@ -452,7 +449,7 @@ class Court:
             
     #this method is for the 'second' mechanic; a second (which represents the unit of time) is a bundle of turns by the players
     #this method executes those turns
-    def game_second(self, ball, sequence, shot_clock, time, threshold=0.45):
+    def game_second(self, ball, sequence, shot_clock, time, threshold=0.35):
         if ball.possession == False:
             for x in range(2):
                 self.loose_ball_chase(ball)

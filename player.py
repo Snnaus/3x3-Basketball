@@ -166,12 +166,12 @@ class Player():
         key = court.post_key(self, has_ball)
         if key not in self.post_dict:
             start = {}
-            for x in post_actions:
+            for x in self.post_actions:
                 start[x] = (1,1)
             self.post_dict[key] = start
             
         current_action = [0, -10000]
-        for k,v in self.post_dict[key]:
+        for k,v in self.post_dict[key].iteritems():
             x_value = float(v[0])/float(v[1])
             if current_action[1] < x_value:
                 current_action[0], current_action[1] = k, x_value
@@ -189,7 +189,7 @@ class Player():
     def keep_value_retrieve(self, key, style):
         if key not in self.keep_dict:
             start_value = {}
-            for style,dict in court_dest.iteritems():
+            for the_style,dict in court_dest.iteritems():
                 for place in dict:
                     start_value[place] = (1,1)
             self.keep_dict[key] = start_value
@@ -205,10 +205,10 @@ class Player():
         
     #this method is determine the the off_ball key value and actions
     def off_ball_value_retrieve(self, key, style):
-        if key not in self.keep_dict:
+        if key not in self.off_ball_dict:
             start_value = {}
-            for style,dict in court_dest.iteritems():
-                if style != 'slash':
+            for this_style,dict in court_dest.iteritems():
+                if this_style != 'slash':
                     for place in dict:
                         start_value[place] = (1,1)
             self.off_ball_dict[key] = start_value
@@ -256,7 +256,7 @@ class Player():
                     self.off_controller('go_to_post', ball, court)
                 elif the_style == 'post' and self.post_up == True and self.post_defender != 0:
                     self.off_controller('post', ball, court)
-                elif self.post_up == True and style != 'post':
+                elif self.post_up == True and the_style != 'post':
                     self.off_controller('go_to_faceup', ball, court)
                 elif self.first_turn == True:
                     self.off_controller(keep[2], ball, court, the_style)
@@ -308,7 +308,7 @@ class Player():
                 self.off_ball_controller('go_to_faceup', ball, court)
             else:
                 self.off_ball_controller(action, ball, court, the_style)
-            self.ledger.append(['off_ball', the_key, action[0]])
+            self.ledger.append(['off_ball', the_key, action])
             self.first_turn = False
         else:
             self.move_to(ball, court)
@@ -928,7 +928,7 @@ class Player():
     def off_controller(self, command, ball, court, sub_command=None):
         if command == 'post':
             if self.post_up == True:
-                post_command = self.post_value_retrieve(ball, court, True)
+                post_command = self.post_value_retrieve(court, True)
                 self.post_move(post_command, ball, court)
         elif command == 'go_to_post':
             if self.post_up == False:
@@ -966,7 +966,8 @@ class Player():
     def off_ball_controller(self, command, ball, court, style=None):
         if command == 'post':
             if self.post_up == True:
-                self.post_move('back', ball, court)
+                post_command = self.post_value_retrieve(court)
+                self.post_move(post_command, ball, court)
         elif command == 'go_to_post':
             if self.post_up == False:
                 self.go_post(ball, court)
