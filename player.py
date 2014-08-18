@@ -98,28 +98,30 @@ class Player():
     patient = False
     
     #physical skills of the player
-    speed = 10
-    jump = 10
-    stamina = 10
-    strength = 10
-    rebound = 10
-    hands = 10
+    speed = 5
+    jump = 5
+    stamina = 5
+    strength = 5
+    rebound = 5
+    hands = 5
+    technique = 5
     
     #offensive skills
-    layup = 10
+    layup = 5
     dunk = False
-    jump_shooting = 10
-    three_modifier = 0
-    ball_handle = 10
-    passing = 10
-    shooting_traffic = 10
-    post_skill = 10
+    jump_shooting = 5
+    three_modifier = 5
+    ball_handle = 5
+    passing = 5
+    shooting_traffic = 5
+    post_skill = 5
+    free_throw = 5
     
     #defensive skills
-    onball_def = 10
-    post_def = 10
-    steal = 10
-    block = 10
+    onball_def = 5
+    post_def = 5
+    steal = 5
+    block = 5
     
     #playstyle
     stealer = False

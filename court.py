@@ -26,6 +26,9 @@ class Court:
     scorer = 0
     score = 0
     
+    #this is to tell that game that a foul was committed and a free throw needs to be taken; stores the shooters id number
+    freethrow = False
+    
     #this is filling the dictionary with the position keys, AKA 'the board'; I had to make this bigger because of a keyerror when rebounds went out of bounds
     def __init__(self):
         for x in range(15):
@@ -330,6 +333,9 @@ class Court:
     def defense_modifier(self, shooter):
         the_num = 0
         for k,v in self.players.iteritems():
+            fate = random.randint(1,100)
+            if fate <= 20 - player.technique + shooter.technique:
+                self.freethrow = shooter.player_id
             if the_num < 1000 and v.team_id != shooter.team_id:
                 the_num += v.block_check(shooter)
                 
@@ -431,7 +437,36 @@ class Court:
                 ball.last_touch = player.player_id
         
         
+    #this method is put the players in position for the free throw and also to take the free throw
+    def free_pos(self, ball, sequence):
+        shooter = self.players[self.freethrow]
+        shooter.court_position = [7,5]
+        same, diff = 0, 0
+        for id,player in self.players,iteritems():
+            if player.team_id != shooter.team_id:
+                if diff == 0:
+                    player.court_position = [9,2]
+                elif diff == 1:
+                    player.court_position = [5,2]
+                else:
+                    player.court_position = [7,7]
+                diff += 1
+            elif player.player_id != shooter.player_id:
+                if same == 0:
+                    player.court_position = [9,3]
+                else:
+                    player.court_position = [5,3]
+                same += 1
         
+        self.update_player_pos()
+        sequence.append(self.tk_frame())
+        
+        shot_check = random.randint(1,100)
+        if shot_check <= shooter.free_throw*2 + 55:
+            self.points_last += 1
+        else:
+            ball.rebound(court, 4)
+    
     #this method is to set each players move_count for the turn
     def set_move_count(self):
         highest = 0
