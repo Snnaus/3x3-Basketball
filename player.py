@@ -241,7 +241,7 @@ class Player():
         shoot[2] = self.shoot_value_retrieve(shoot[1])
         
         #here is where the program will compare the expected values of the actions and make a decision based on the highest expected value.
-        if shoot[2] >= threshold:
+        if shoot[2] >= threshold and self.team_id == ball.team_id_possession:
             self.off_controller('shoot', ball, court)
             self.ledger.append((shoot[0],shoot[1]))
         else:
