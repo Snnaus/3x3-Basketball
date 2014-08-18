@@ -334,7 +334,7 @@ class Court:
         the_num = 0
         for k,v in self.players.iteritems():
             fate = random.randint(1,100)
-            if fate <= 20 - player.technique + shooter.technique:
+            if fate <= 20 - v.technique + shooter.technique:
                 self.freethrow = shooter.player_id
             if the_num < 1000 and v.team_id != shooter.team_id:
                 the_num += v.block_check(shooter)
@@ -464,6 +464,7 @@ class Court:
         shot_check = random.randint(1,100)
         if shot_check <= shooter.free_throw*2 + 55:
             self.points_last += 1
+            print 'Free Throw Made'
         else:
             ball.rebound(court, 4)
     
@@ -550,6 +551,9 @@ class Court:
                 out_bounds = ball.out_of_bounds_check(ball.court_position)
                 shot_clock -= 1
                 seconds -= 1
+                if self.freethrow != False:
+                    self.free_pos(ball, sequence)
+                    self.freethrow = False
                 if self.points_last > 0:
                     shot_made = True
                     break
