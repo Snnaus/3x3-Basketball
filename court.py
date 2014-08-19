@@ -213,7 +213,7 @@ class Court:
         for key,value in options.iteritems():
             if ball.picked_up_dribble == True and choice[0] == 0:
                 pass_ball, choice[0], choice[1] = key, value[0], value[1]                
-            elif value[1] >= keep and value[1] > choice[1] and value[0] > choice[0]:
+            elif value[1] > keep and value[1] > choice[1] and value[0] > choice[0]:
                 pass_ball, choice[0], choice[1] = key, value[0], value[1]
         return pass_ball
      
@@ -427,7 +427,7 @@ class Court:
         ball.last_touch = player.player_id'''
         for id,player in self.players.iteritems():
             player.has_ball = False
-            if player.player_id == self.point_guards[team]:
+            if id == self.point_guards[team]:
                 player.has_ball = True
                 player.on_defense = False
                 ball.possession = True
@@ -476,7 +476,7 @@ class Court:
             player.move_count = round(player.speed/4)
             player.first_turn = True
             if player.has_ball == True:
-                player.move_count = int(player.move_count*0.75)
+                player.move_count = player.move_count
             if player.move_count > highest:
                 highest = player.move_count
                 
@@ -484,7 +484,7 @@ class Court:
             
     #this method is for the 'second' mechanic; a second (which represents the unit of time) is a bundle of turns by the players
     #this method executes those turns
-    def game_second(self, ball, sequence, shot_clock, time, threshold=0.4):
+    def game_second(self, ball, sequence, shot_clock, time, threshold=0.3):
         if ball.possession == False:
             for x in range(2):
                 self.loose_ball_chase(ball)
@@ -530,6 +530,7 @@ class Court:
         out_bounds = 0
         ball.turnt_over = False
         shot_made = False
+        point_one, point_two = 0,0
         while True:
             #there is a 12 second shot clock
             shot_clock = 12
@@ -543,6 +544,8 @@ class Court:
                             ball.team_id_possession = team
                             break
                 self.player_reset(ball, sequence)
+            
+            #print point_one.has_ball, point_two.has_ball
             shot_clock_violation = False
             out_bounds = False
             ball.turnt_over = False
