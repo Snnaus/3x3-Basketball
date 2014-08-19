@@ -109,8 +109,8 @@ class Player():
     #offensive skills
     layup = 5
     dunk = False
-    jump_shooting = 5
-    three_modifier = 5
+    jump_shooting = 1
+    three_modifier = 1
     ball_handle = 5
     passing = 5
     shooting_traffic = 5
@@ -492,7 +492,7 @@ class Player():
             self.has_ball = False
             if in_layup == True:
                 shot_fate = random.randint(1,100)
-                if shot_fate <= 40 + layup_percent - true_modifier:
+                if shot_fate <= 20 + layup_percent*3 - true_modifier:
                     print 'Layup made'
                     court.points_last = 1
                     court.scorer = self.player_id
@@ -503,7 +503,7 @@ class Player():
                 distance_from_basket = self.distance_from_basket()
                 if distance_from_basket < 6:
                     shot_fate = random.randint(1,100)
-                    if shot_fate <= 30 + self.jump_shooting - court_modifier - true_modifier:
+                    if shot_fate <= self.jump_shooting*3 - court_modifier - true_modifier:
                         print "Jump Shot made"
                         court.points_last = 1
                         court.scorer = self.player_id
@@ -524,13 +524,20 @@ class Player():
     #need to add block to somewhere: 6/22: replaced the two_blocks_away boolean
     #with the opponent then a call for distance_between_players to determine
     #if the players a 2 blocks away
-    def defense_jump(self, opponent):
+    def defense_jump(self, opponent, court):
         defense_modifier = 0
         distance = self.distance_between_players(opponent)
+        fate = random.randint(1,100)
         if distance < 2:
             defense_modifier = (self.height + random.randint(0, self.jump))
+            if fate <= 5 - self.technique + opponent.technique:
+                court.freethrow = opponent.player_id
+            elif fate <= 20 - self.technique + opponent.technique and self.distance_from_basket() < 3:
+                court.freethrow = opponent.player_id
         elif distance < 3:
             defense_modifier = (self.height + random.randint(0,self.jump))/2
+            if fate <= 5 - self.technique + opponent.technique and opponent.distance_from_basket() < 3:
+                court.freethrow = opponent.player_id
             
         return defense_modifier
             
@@ -583,8 +590,8 @@ class Player():
     #this is a function to determine the modifier on the shot; this is pulling the
     #'true modifier' portion of the shooting function and making its own, allowing
     #for the incorporation of a blocking mechanic
-    def block_check(self, opponent):
-        true_modifier = self.defense_jump(opponent) - (opponent.shooting_traffic + opponent.height)
+    def block_check(self, opponent, court):
+        true_modifier = self.defense_jump(opponent, court) - (opponent.shooting_traffic + opponent.height)
         #print true_modifier
         if true_modifier < 0:
             true_modifier = 0

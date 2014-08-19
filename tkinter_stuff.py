@@ -22,7 +22,7 @@ class Court_Animation():
             
     def animate(self):
         if self.frame_count < len(self.sequence):
-            self.map = self.sequence[self.frame_count]
+            self.map = self.sequence[self.frame_count][0]
         
             x_count = 0
             y_count = 0
@@ -45,5 +45,8 @@ class Court_Animation():
                     self.canvas.pack(fill=BOTH, expand=1)
                     y_count += 1
                 x_count += 1
+            ball = self.sequence[self.frame_count][1]
+            self.canvas.create_rectangle(40*ball[0], 40*ball[1], 40*ball[0]+20, 40*ball[1]+20, fill='orange', outline='black')
+            #self.canvas.pack(fill=BOTH, expand=1)
             self.frame_count += 1
             self.root.after(100, self.animate)

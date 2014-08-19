@@ -160,8 +160,6 @@ class Ball:
     def tuurnt_over(self, new_player, rebound, court):
             if new_player.team_id != court.players[self.last_possession].team_id or rebound == True:
                 turnt_over = True
-                if new_player.team_id != court.players[self.last_possession].team_id:
-                    court.points_last = -2
                 for player in court.players:
                     if player.team_id == new_player.team_id:
                         player.on_defense = False

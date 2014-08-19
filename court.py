@@ -213,7 +213,7 @@ class Court:
         for key,value in options.iteritems():
             if ball.picked_up_dribble == True and choice[0] == 0:
                 pass_ball, choice[0], choice[1] = key, value[0], value[1]                
-            elif value[1] > keep and value[1] > choice[1] and value[0] > choice[0]:
+            elif value[1] >= keep and value[1] > choice[1] and value[0] > choice[0]:
                 pass_ball, choice[0], choice[1] = key, value[0], value[1]
         return pass_ball
      
@@ -333,11 +333,8 @@ class Court:
     def defense_modifier(self, shooter):
         the_num = 0
         for k,v in self.players.iteritems():
-            fate = random.randint(1,100)
-            if fate <= 20 - v.technique + shooter.technique:
-                self.freethrow = shooter.player_id
             if the_num < 1000 and v.team_id != shooter.team_id:
-                the_num += v.block_check(shooter)
+                the_num += v.block_check(shooter, self)
                 
         return the_num
         
@@ -369,7 +366,7 @@ class Court:
         return int(math.sqrt(((spot[0]-7)**2)+((spot[1]-1)**2)))
         
     #this method is for the tk animator
-    def tk_frame(self):
+    def tk_frame(self, ball):
         map = []
         for x in range(15):
             row = []
@@ -388,7 +385,8 @@ class Court:
                 else:
                     row.append(self.positions[x,y])
             map.append(row)
-        return map
+        frame = [map, ball.court_position]
+        return frame
         
     #this method is to reset the players to a default position during the game; only at the start of the game, after on floor fouls, and after out of bounds
     def player_reset(self, ball, sequence):
@@ -418,7 +416,7 @@ class Court:
                     self.players[defender].court_position = self.players[defender].on_ball_destination(self.players[offense],True)
      
         self.update_player_pos()
-        sequence.append(self.tk_frame())
+        sequence.append(self.tk_frame(ball))
         
         '''ran_pick = random.randint(1,3)
         player = self.players[offense_pl[ran_pick-1]]
@@ -435,14 +433,16 @@ class Court:
                 ball.possession = True
                 ball.last_possession = player.player_id
                 ball.last_touch = player.player_id
+                ball.court_position = self.players[ball.last_possession].court_position
         
         
     #this method is put the players in position for the free throw and also to take the free throw
     def free_pos(self, ball, sequence):
         shooter = self.players[self.freethrow]
         shooter.court_position = [7,5]
+        ball.court_position = self.players[ball.last_possession].court_position
         same, diff = 0, 0
-        for id,player in self.players,iteritems():
+        for id,player in self.players.iteritems():
             if player.team_id != shooter.team_id:
                 if diff == 0:
                     player.court_position = [9,2]
@@ -459,14 +459,15 @@ class Court:
                 same += 1
         
         self.update_player_pos()
-        sequence.append(self.tk_frame())
+        sequence.append(self.tk_frame(ball))
         
         shot_check = random.randint(1,100)
         if shot_check <= shooter.free_throw*2 + 55:
             self.points_last += 1
+            self.scorer = shooter.player_id
             print 'Free Throw Made'
         else:
-            ball.rebound(court, 4)
+            ball.rebound(self, 4)
     
     #this method is to set each players move_count for the turn
     def set_move_count(self):
@@ -483,7 +484,7 @@ class Court:
             
     #this method is for the 'second' mechanic; a second (which represents the unit of time) is a bundle of turns by the players
     #this method executes those turns
-    def game_second(self, ball, sequence, shot_clock, time, threshold=0.35):
+    def game_second(self, ball, sequence, shot_clock, time, threshold=0.4):
         if ball.possession == False:
             for x in range(2):
                 self.loose_ball_chase(ball)
@@ -504,7 +505,9 @@ class Court:
                             current_player.off_ball_brain(ball, self)
                         self.update_player_pos()
                         current_player.move_count -= 1
-                sequence.append(self.tk_frame())
+                #print ball.court_position, self.players[ball.last_possession].court_position
+                ball.court_position = self.players[ball.last_possession].court_position
+                sequence.append(self.tk_frame(ball))
                 turn_count -= 1
                 if turn_count <= 0:
                     break
