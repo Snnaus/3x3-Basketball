@@ -85,6 +85,24 @@ class Player():
     
     def __init__(self, id):
         self.player_id = id
+        #this is to store the game stats of a player
+        self.game_stats = {
+            'ID': id,
+            'PTS': 0,
+            'FG': 0,
+            'FGA': 0,
+            '2P': 0,
+            '2PA': 0,
+            'FT': 0,
+            'FTA': 0,
+            'ORB': 0,
+            'DRB': 0,
+            'AST': 0,
+            'STL': 0,
+            'BLK': 0,
+            'TO': 0,
+            'PF': 0
+            }
     
     #biographical
     first_name = ""
@@ -98,43 +116,41 @@ class Player():
     patient = False
     
     #physical skills of the player
-    speed = 5
-    jump = 5
-    stamina = 5
-    strength = 5
-    rebound = 5
-    hands = 5
-    technique = 5
+    speed = 10
+    jump = 10
+    stamina = 10
+    strength = 10
+    rebound = 10
+    hands = 10
+    technique = 10
     
     #offensive skills
-    layup = 5
+    layup = 10
     dunk = False
-    jump_shooting = 1
-    three_modifier = 1
-    ball_handle = 5
-    passing = 5
-    shooting_traffic = 5
-    post_skill = 5
-    free_throw = 5
+    jump_shooting = 10
+    three_modifier = 10
+    ball_handle = 10
+    passing = 10
+    shooting_traffic = 10
+    post_skill = 10
+    free_throw = 10
     
     #defensive skills
-    onball_def = 5
-    post_def = 5
-    steal = 5
-    block = 5
+    onball_def = 10
+    post_def = 10
+    steal = 10
+    block = 10
     
     #playstyle
     stealer = False
     slasher = False
     point_man = False
     post_man = False
-    three_shooter = False
+    three_shooter = True
     traffic_shooter = False
     
     #game variables
     has_ball = False
-    hot = False
-    cold = False
     shot_blocked = False
     court_position = [0,0]
     destination = [0,0]
@@ -145,6 +161,12 @@ class Player():
     def_focus = 0
     post_defender = 0
     first_turn = False
+    
+    #this is to reset all the players stats
+    def stat_reset(self):
+        for stat in self.game_stats:
+            if stat != 'ID':
+                self.game_stats[stat] = 0
     
     #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     
@@ -247,8 +269,10 @@ class Player():
             self.off_controller('shoot', ball, court)
             self.ledger.append((shoot[0],shoot[1]))
         else:
-            check = court.openness_check(self, ball)
-            if check == False or self.first_turn == False and self.point_man == False:
+            check = False
+            if self.first_turn == True or self.point_man == True:
+                check = court.openness_check(self, ball)
+            if check == False:
                 append = True
                 keep[1] = court.keep_key(self, ball)
                 the_style = self.style_chooser(keep[1], True)
@@ -445,6 +469,8 @@ class Player():
             ball.assitor = self.player_id
             if fate_pass <= 85 + self.passing + target.hands:
                 ball.poss_change(target, court)
+                ball.assistor = self.player_id
+                ball.assistor_timer = 0
                 ball.court_position[0] = target.court_position[0]
                 ball.court_position[1] = target.court_position[1]
                 print 'Pass made'
@@ -492,10 +518,13 @@ class Player():
             self.has_ball = False
             if in_layup == True:
                 shot_fate = random.randint(1,100)
+                self.game_stats['FGA'] += 1
                 if shot_fate <= 20 + layup_percent*3 - true_modifier:
                     print 'Layup made'
                     court.points_last = 1
                     court.scorer = self.player_id
+                    self.game_stats['FG'] += 1
+                    self.game_stats['PTS'] += 1
                 else:
                     ball.rebound(court)
             else:
@@ -503,19 +532,25 @@ class Player():
                 distance_from_basket = self.distance_from_basket()
                 if distance_from_basket < 6:
                     shot_fate = random.randint(1,100)
+                    self.game_stats['FGA'] += 1
                     if shot_fate <= self.jump_shooting*3 - court_modifier - true_modifier:
                         print "Jump Shot made"
                         court.points_last = 1
                         court.scorer = self.player_id
+                        self.game_stats['FG'] += 1
+                        self.game_stats['PTS'] += 1
                     else:
                         ball.rebound(court, distance_from_basket)
                 else:
                     court_modifier += (7 * (distance_from_basket - 7))
                     shot_fate = random.randint(1,100)
+                    self.game_stats['2PA'] += 1
                     if shot_fate <= self.jump_shooting + self.three_modifier - court_modifier - true_modifier:
                         print "Made the Three"
                         court.points_last = 2
                         court.scorer = self.player_id
+                        self.game_stats['2P'] += 1
+                        self.game_stats['PTS'] += 2
                     else:
                         ball.rebound(court, distance_from_basket)
                         
@@ -534,11 +569,17 @@ class Player():
                 court.freethrow = opponent.player_id
             elif fate <= 20 - self.technique + opponent.technique and self.distance_from_basket() < 3:
                 court.freethrow = opponent.player_id
-        elif distance < 3:
+        '''elif distance < 3:
             defense_modifier = (self.height + random.randint(0,self.jump))/2
             if fate <= 5 - self.technique + opponent.technique and opponent.distance_from_basket() < 3:
-                court.freethrow = opponent.player_id
-            
+                court.freethrow = opponent.player_id'''
+        
+        if court.freethrow != False:
+            if opponent.distance_from_basket() >= 6:
+                court.ft_count = 2
+            else:
+                court.ft_count = 1
+            self.game_stats['PF'] += 1
         return defense_modifier
             
     #this function is for the player to defend the offensive player if he has
@@ -603,9 +644,7 @@ class Player():
             #to be used because a block is a missed shot, so it needs to count
             #as such
             true_modifier = 1000
-            #this is to signal the rebound function that the ball has taken the
-            #direction of a block, that is to say it probably isn't around the rim
-            opponent.shot_blocked = True
+            self.game_stats['BLK'] += 1
         
         if true_modifier < 0:
             true_modifier = 0
@@ -754,6 +793,7 @@ class Player():
     #this method will determine if the player 'jumps' the offensive player successfully; this is from the perspective of the defender
     def def_cutoff_check(self, opponent):
         check = (self.strength/2) + self.onball_d - opponent.strength - random.randint(1, opponent.ball_handle)
+        print check
         if check >= 0:
             return True
         else:

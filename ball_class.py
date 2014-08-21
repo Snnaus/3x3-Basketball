@@ -136,18 +136,22 @@ class Ball:
     #it will also adjust the steal/rebound/turnover stats of the respective players (currently not implemented 7/27/2014)
     def poss_change(self, new_player, court):
         if self.possession == False:
-            """if self.last_possession != 0 and self.rebound == False:
-                court.players[self.last_possession].turnover_stat += 1
-                if self.steal == True:
-                    court.players[self.last_touch].steal_stat += 1
-                    self.steal = False
-            elif self.rebound == True:
-                new_player.reb_stat += 1
-                self.rebound = False"""
-                
+            old_player = court.players[self.last_possession]
+            if old_player.team_id != new_player.team_id and self.is_rebound == False:
+                court.players[self.last_possession].game_stats['TO'] += 1
+                if self.is_steal == True:
+                    court.players[self.last_touch].game_stats['STL'] += 1
+                    self.is_steal = False
+            elif self.is_rebound == True:
+                if old_player.team_id == new_player.team_id:
+                    new_player.game_stats['ORB'] += 1
+                else:
+                    new_player.game_stats['DRB'] += 1
+                    
             rebound = False
             if self.is_rebound == True:
                 rebound = True
+                self.is_rebound = False
             new_player.has_ball = True
             self.tuurnt_over(new_player, rebound, court)
             self.last_possession = new_player.player_id

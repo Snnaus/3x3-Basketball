@@ -28,6 +28,7 @@ class Court:
     
     #this is to tell that game that a foul was committed and a free throw needs to be taken; stores the shooters id number
     freethrow = False
+    ft_count = 0
     
     #this is filling the dictionary with the position keys, AKA 'the board'; I had to make this bigger because of a keyerror when rebounds went out of bounds
     def __init__(self):
@@ -333,7 +334,7 @@ class Court:
     def defense_modifier(self, shooter):
         the_num = 0
         for k,v in self.players.iteritems():
-            if the_num < 1000 and v.team_id != shooter.team_id:
+            if the_num < 1000 and v.team_id != shooter.team_id and self.freethrow == False:
                 the_num += v.block_check(shooter, self)
                 
         return the_num
@@ -389,7 +390,7 @@ class Court:
         return frame
         
     #this method is to reset the players to a default position during the game; only at the start of the game, after on floor fouls, and after out of bounds
-    def player_reset(self, ball, sequence):
+    def player_reset(self, ball, sequence, random_player):
         team = ball.team_id_possession
         one = self.players[self.point_guards[team]]
         two = 0
@@ -418,22 +419,24 @@ class Court:
         self.update_player_pos()
         sequence.append(self.tk_frame(ball))
         
-        '''ran_pick = random.randint(1,3)
-        player = self.players[offense_pl[ran_pick-1]]
-        player.has_ball = True
-        player.on_defense = False
-        ball.possession = True
-        ball.last_possession = player.player_id
-        ball.last_touch = player.player_id'''
-        for id,player in self.players.iteritems():
-            player.has_ball = False
-            if id == self.point_guards[team]:
-                player.has_ball = True
-                player.on_defense = False
-                ball.possession = True
-                ball.last_possession = player.player_id
-                ball.last_touch = player.player_id
-                ball.court_position = self.players[ball.last_possession].court_position
+        if random_player == True:
+            ran_pick = random.randint(1,3)
+            player = self.players[offense_pl[ran_pick-1]]
+            player.has_ball = True
+            player.on_defense = False
+            ball.possession = True
+            ball.last_possession = player.player_id
+            ball.last_touch = player.player_id
+        else:
+            for id,player in self.players.iteritems():
+                player.has_ball = False
+                if id == self.point_guards[team]:
+                    player.has_ball = True
+                    player.on_defense = False
+                    ball.possession = True
+                    ball.last_possession = player.player_id
+                    ball.last_touch = player.player_id
+                    ball.court_position = self.players[ball.last_possession].court_position
         
         
     #this method is put the players in position for the free throw and also to take the free throw
@@ -441,6 +444,7 @@ class Court:
         shooter = self.players[self.freethrow]
         shooter.court_position = [7,5]
         ball.court_position = self.players[ball.last_possession].court_position
+        ball.assistor_timer= 1000
         same, diff = 0, 0
         for id,player in self.players.iteritems():
             if player.team_id != shooter.team_id:
@@ -461,13 +465,22 @@ class Court:
         self.update_player_pos()
         sequence.append(self.tk_frame(ball))
         
-        shot_check = random.randint(1,100)
-        if shot_check <= shooter.free_throw*2 + 55:
-            self.points_last += 1
-            self.scorer = shooter.player_id
-            print 'Free Throw Made'
-        else:
-            ball.rebound(self, 4)
+        if self.points_last == 0 and self.ft_count == 1:
+            shooter.game_stats['FGA'] -= 1
+        elif self.points_last == 0:
+            shooter.game_stats['2PA'] -= 1
+        
+        for x in range(self.ft_count):
+            shot_check = random.randint(1,100)
+            shooter.game_stats['FTA'] += 1
+            if shot_check <= shooter.free_throw*2 + 55:
+                self.points_last += 1
+                self.scorer = shooter.player_id
+                shooter.game_stats['FT'] += 1
+                shooter.game_stats['PTS'] += 1
+                print 'Free Throw Made'
+            else:
+                ball.rebound(self, 4)
     
     #this method is to set each players move_count for the turn
     def set_move_count(self):
@@ -484,7 +497,7 @@ class Court:
             
     #this method is for the 'second' mechanic; a second (which represents the unit of time) is a bundle of turns by the players
     #this method executes those turns
-    def game_second(self, ball, sequence, shot_clock, time, threshold=0.3):
+    def game_second(self, ball, sequence, shot_clock, time, threshold=0.7):
         if ball.possession == False:
             for x in range(2):
                 self.loose_ball_chase(ball)
@@ -513,7 +526,7 @@ class Court:
                     break
                         
     #this is the game method; here where the game loop is found
-    def game(self, ball, sequence):
+    def game(self, ball, sequence, random_player=True):
         self.score = 0
         #the games last 10 mins(600 secs) with no half time
         seconds = 600
@@ -530,7 +543,8 @@ class Court:
         out_bounds = 0
         ball.turnt_over = False
         shot_made = False
-        point_one, point_two = 0,0
+        for id,player in self.players.iteritems():
+            player.stat_reset()
         while True:
             #there is a 12 second shot clock
             shot_clock = 12
@@ -543,7 +557,7 @@ class Court:
                         if team != self.players[ball.last_touch].team_id:
                             ball.team_id_possession = team
                             break
-                self.player_reset(ball, sequence)
+                self.player_reset(ball, sequence, random_player)
             
             #print point_one.has_ball, point_two.has_ball
             shot_clock_violation = False
@@ -557,23 +571,28 @@ class Court:
                 out_bounds = ball.out_of_bounds_check(ball.court_position)
                 shot_clock -= 1
                 seconds -= 1
+                ball.assistor_timer += 1
                 if self.freethrow != False:
                     self.free_pos(ball, sequence)
                     self.freethrow = False
                 if self.points_last > 0:
                     shot_made = True
+                    if ball.assistor_timer < 6 and ball.assistor != 0:
+                        self.players[ball.assistor].game_stats['AST'] += 1
+                        ball.assistor_timer = 1000
                     break
                 if shot_clock <= 0:
                     #self.points_last = -2
                     shot_clock_violation = True
                     break
                 elif seconds <= 0 or ball.turnt_over == True or out_bounds == True:
-                    '''if out_bounds == True:
-                        self.points_last = -2'''
+                    if out_bounds == True and self.players[ball.last_touch].team_id == self.players[ball.last_possession].team_id:
+                        self.points_last = -1
+                        self.players[ball.last_touch].game_stats['TO'] += 1
                     break
             for id,player in self.players.iteritems():
                 player.ledger_reader(self)
-            if self.points_last >= 0:
+            if self.points_last > 0:
                 self.score += self.points_last
             if seconds <= 0:
                 break
