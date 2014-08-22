@@ -111,8 +111,8 @@ class Ball:
             return False
             
     def box_out_range(self):
-        if self.court_position[0] > 3 and self.court_position[0] < 11:
-            if self.court_position[1] > 0 and self.court_position[1] < 5:
+        if self.court_position[0] >= 3 and self.court_position[0] <= 11:
+            if self.court_position[1] >= 0 and self.court_position[1] <= 5:
                 return True
             else:
                 return False
@@ -126,6 +126,7 @@ class Ball:
         self.destination = [7,1]
         self.bounce(shot_distance)
         self.is_rebound = True
+        self.possession = False
         rebounders = court.players_between(self, self.court_position, [7,1])
         
         if self.box_out_range() == True and len(rebounders) > 0:
@@ -135,6 +136,7 @@ class Ball:
     #this method switches the balls possession; 
     #it will also adjust the steal/rebound/turnover stats of the respective players (currently not implemented 7/27/2014)
     def poss_change(self, new_player, court):
+        rebound = False
         if self.possession == False:
             old_player = court.players[self.last_possession]
             if old_player.team_id != new_player.team_id and self.is_rebound == False:
@@ -148,23 +150,23 @@ class Ball:
                 else:
                     new_player.game_stats['DRB'] += 1
                     
-            rebound = False
+            
             if self.is_rebound == True:
                 rebound = True
                 self.is_rebound = False
-            new_player.has_ball = True
-            self.tuurnt_over(new_player, rebound, court)
-            self.last_possession = new_player.player_id
-            self.last_touch = new_player.player_id
-            self.possession = True
-            ball.court_position[0], ball.court_position[1] = new_player.court_position[0], new_player.court_position[1]
+        new_player.has_ball = True
+        self.tuurnt_over(new_player, rebound, court)
+        self.last_possession = new_player.player_id
+        self.last_touch = new_player.player_id
+        self.possession = True
+        self.court_position[0], self.court_position[1] = new_player.court_position[0], new_player.court_position[1]
                 
             
     #this method is to adjust the turnt_over attribute after a turnover
     def tuurnt_over(self, new_player, rebound, court):
-            if new_player.team_id != court.players[self.last_possession].team_id or rebound == True:
+            if new_player.team_id != court.players[self.last_possession].team_id or rebound == True and new_player.team_id != court.players[self.last_possession].team_id:
                 turnt_over = True
-                for player in court.players:
+                for id,player in court.players.iteritems():
                     if player.team_id == new_player.team_id:
                         player.on_defense = False
                     else:

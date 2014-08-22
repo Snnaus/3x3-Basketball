@@ -132,7 +132,7 @@ class Court:
                             key = key + '0'
                 else:
                     key = key + '0'
-        key = self.distance_key(player, key)
+        #key = self.distance_key(player, key)
         return key
             
     
@@ -336,7 +336,8 @@ class Court:
         for k,v in self.players.iteritems():
             if the_num < 1000 and v.team_id != shooter.team_id and self.freethrow == False:
                 the_num += v.block_check(shooter, self)
-                
+        
+        the_num = the_num - (shooter.shooting_traffic + shooter.height)
         return the_num
         
         
@@ -497,7 +498,7 @@ class Court:
             
     #this method is for the 'second' mechanic; a second (which represents the unit of time) is a bundle of turns by the players
     #this method executes those turns
-    def game_second(self, ball, sequence, shot_clock, time, threshold=0.7):
+    def game_second(self, ball, sequence, shot_clock, time, threshold=3.0):
         if ball.possession == False:
             for x in range(2):
                 self.loose_ball_chase(ball)
@@ -559,11 +560,11 @@ class Court:
                             break
                 self.player_reset(ball, sequence, random_player)
             
-            #print point_one.has_ball, point_two.has_ball
             shot_clock_violation = False
             out_bounds = False
             ball.turnt_over = False
             shot_made = False
+            ball.assistor, ball.assistor_timer = 0,0
             for id, player in self.players.iteritems():
                 player.ledger = []
             while True:
@@ -574,10 +575,11 @@ class Court:
                 ball.assistor_timer += 1
                 if self.freethrow != False:
                     self.free_pos(ball, sequence)
+                    ball.assistor = 0
                     self.freethrow = False
                 if self.points_last > 0:
                     shot_made = True
-                    if ball.assistor_timer < 6 and ball.assistor != 0:
+                    if ball.assistor_timer < 4 and ball.assistor != 0:
                         self.players[ball.assistor].game_stats['AST'] += 1
                         ball.assistor_timer = 1000
                     break
@@ -586,8 +588,7 @@ class Court:
                     shot_clock_violation = True
                     break
                 elif seconds <= 0 or ball.turnt_over == True or out_bounds == True:
-                    if out_bounds == True and self.players[ball.last_touch].team_id == self.players[ball.last_possession].team_id:
-                        self.points_last = -1
+                    if out_bounds == True and self.players[ball.last_touch].team_id == self.players[ball.last_possession].team_id and ball.shot_att == False:
                         self.players[ball.last_touch].game_stats['TO'] += 1
                     break
             for id,player in self.players.iteritems():

@@ -128,7 +128,7 @@ class Player():
     layup = 10
     dunk = False
     jump_shooting = 10
-    three_modifier = 10
+    three_modifier = 0
     ball_handle = 10
     passing = 10
     shooting_traffic = 10
@@ -142,7 +142,7 @@ class Player():
     block = 10
     
     #playstyle
-    stealer = False
+    stealer = True
     slasher = False
     point_man = False
     post_man = False
@@ -246,7 +246,29 @@ class Player():
             
         
         return current_action[0]
-            
+    
+    #this method is used in order to determine a players expected value of shooting for a given distance and how many players around him; 
+    #used for comparison against the threshold to shoot
+    def shoot_exv(self, court, ball):
+        key = court.proximity_key(self, ball, True)
+        prox = list(key)
+        openness = 0
+        exv = 0
+        for x in prox:
+            if x == '1':
+                openness -= 10
+        openness = openness - (self.shooting_traffic + self.height)
+        if openness < 0:
+            openness = 0
+        if self.distance_from_basket() < 4:
+            exv = 20 + self.layup*3 - openness
+            if self.dunk == True:
+                exv = exv + 10
+        elif self.distance_from_basket() < 6:
+            exv = self.jump_shooting*3 - openness
+        else:
+            exv = self.jump_shooting + self.three_modifier/4 - openness
+        return exv
         
     #this is the offensive brain of the player; here is were the sense keys are generated, used to come up with a decision, and then sent to the controller; 
     #threshold value must be a float; the player can only pass on the first turn of a second.
@@ -258,16 +280,16 @@ class Player():
         
         #[identifier, key, action(only for keep)/expected value(for shoot)]
         keep = ['keep',0,0]
-        shoot = ['shoot',0,0]
+        #shoot = ['shoot',0,0]
         passs = ['pass', 0]
         #generating shooting key
-        shoot[1] = court.proximity_key(self, ball, True)
-        shoot[2] = self.shoot_value_retrieve(shoot[1])
+        #shoot[1] = court.proximity_key(self, ball, True)
+        #shoot[2] = self.shoot_value_retrieve(shoot[1])
         
         #here is where the program will compare the expected values of the actions and make a decision based on the highest expected value.
-        if shoot[2] >= threshold and self.team_id == ball.team_id_possession:
+        if self.shoot_exv(court, ball) >= threshold and self.team_id == ball.team_id_possession and self.destination == self.court_position:
             self.off_controller('shoot', ball, court)
-            self.ledger.append((shoot[0],shoot[1]))
+            #self.ledger.append((shoot[0],shoot[1]))
         else:
             check = False
             if self.first_turn == True or self.point_man == True:
@@ -353,7 +375,7 @@ class Player():
             elif event[0] == 'off_ball':
                 old_points = court.points_last
                 if court.scorer != self.player_id:
-                    court.points_last = 0.50
+                    court.points_last = 0
                 new[0], new[1] = self.off_ball_dict[key][event[2]][0] + court.points_last, self.off_ball_dict[key][event[2]][1] + 1
                 self.off_ball_dict[key][event[2]] = (int(new[0]),int(new[1]))
                 court.points_last = old_points
@@ -435,21 +457,27 @@ class Player():
     def hand_check(self, opponent, ball, court):
         steal_check = random.randint(1,self.steal*2)
         grab_check = random.randint(1,100)
-        if steal_check >= opponent.ball_handle:
-            opponent.has_ball = False
-            ball.is_steal = True
-            ball.last_touch = self.player_id
-            if self.hands <= grab_check:
-                ball.poss_change(self, court)
+        if steal_check > opponent.ball_handle + random.randint(1,40):
+            fate = random.randint(1,100)
+            if fate <= 5 - self.technique + opponent.technique:
+                court.freethrow = opponent.player_id
+                self.game_stats['PF'] += 1
             else:
-                ball.bounce(2,opponent.court_position)
+                opponent.has_ball = False
+                ball.is_steal = True
+                ball.last_touch = self.player_id
+                ball.possession = False
+                if self.hands <= grab_check:
+                    ball.poss_change(self, court)
+                else:
+                    ball.bounce(2,opponent.court_position)
         
             
     #This is the function for the player to pass the ball to a team-mate
     #first a 'pass' check from the player with the ball, to check for a good pass
     #then a 'hand' check to see if the receiver catches the ball
     def pass_ball(self, target, ball, court):
-        print 'Pass attempted'
+        #print 'Pass attempted'
         ball.picked_up_dribble = False
         fate_pass = random.randint(1,100)
         fate_catch = random.randint(1,60)
@@ -457,6 +485,7 @@ class Player():
         tippers = court.players_between(ball, target.court_position, self.court_position)
         tipped = False
         defender = 0
+        ball.possession = False
         for k,v in tippers.iteritems():
             if self.team_id != court.players[v].team_id:
                 tipped = court.players[v].tip_pass()
@@ -473,12 +502,11 @@ class Player():
                 ball.assistor_timer = 0
                 ball.court_position[0] = target.court_position[0]
                 ball.court_position[1] = target.court_position[1]
-                print 'Pass made'
+                #print 'Pass made'
             else:
-                #this is for a wayward pass, hence why the focal point is on the passer; this could cause some crazy passes like 15 blocks backwards
-                ball.destination[0], ball.destination[1] = self.court_position[0], self.court_position[1]
-                ball.court_position[0], ball.court_position[1] = self.court_position[0], self.court_position[1]
-                ball.bounce(distance*2,self.court_position)
+                ball.destination[0], ball.destination[1] = target.court_position[0], target.court_position[1]
+                ball.court_position[0], ball.court_position[1] = target.court_position[0], target.court_position[1]
+                ball.bounce(distance,target.court_position)
         else:
             ball.is_steal = True
             ball.last_touch = defender.player_id
@@ -545,7 +573,7 @@ class Player():
                     court_modifier += (7 * (distance_from_basket - 7))
                     shot_fate = random.randint(1,100)
                     self.game_stats['2PA'] += 1
-                    if shot_fate <= self.jump_shooting + self.three_modifier - court_modifier - true_modifier:
+                    if shot_fate <= self.jump_shooting/2 + self.three_modifier - court_modifier - true_modifier:
                         print "Made the Three"
                         court.points_last = 2
                         court.scorer = self.player_id
@@ -632,22 +660,17 @@ class Player():
     #'true modifier' portion of the shooting function and making its own, allowing
     #for the incorporation of a blocking mechanic
     def block_check(self, opponent, court):
-        true_modifier = self.defense_jump(opponent, court) - (opponent.shooting_traffic + opponent.height)
-        #print true_modifier
-        if true_modifier < 0:
-            true_modifier = 0
+        true_modifier = self.defense_jump(opponent, court)
         
         #this will take the difference between the two modifiers and if it is greater
         #than 20 - block, it will be a block
-        if true_modifier >= 25 - self.block:
+        if true_modifier - (opponent.shooting_traffic + opponent.height) >= 25 - self.block:
             #this is to insure that the shot is missed; the shot function needs
             #to be used because a block is a missed shot, so it needs to count
             #as such
             true_modifier = 1000
             self.game_stats['BLK'] += 1
         
-        if true_modifier < 0:
-            true_modifier = 0
         return true_modifier
     
     #this is a function to see if a player is in-between a player passing the ball
