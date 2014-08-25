@@ -466,9 +466,9 @@ class Court:
         self.update_player_pos()
         sequence.append(self.tk_frame(ball))
         
-        if self.points_last == 0 and self.ft_count == 1:
+        if self.points_last == 0 and self.ft_count == 1 and ball.shot_att == True:
             shooter.game_stats['FGA'] -= 1
-        elif self.points_last == 0:
+        elif self.points_last == 0 and ball.shot_att == True:
             shooter.game_stats['2PA'] -= 1
         
         for x in range(self.ft_count):
@@ -479,7 +479,7 @@ class Court:
                 self.scorer = shooter.player_id
                 shooter.game_stats['FT'] += 1
                 shooter.game_stats['PTS'] += 1
-                print 'Free Throw Made'
+                #print 'Free Throw Made'
             else:
                 ball.rebound(self, 4)
     
@@ -498,7 +498,7 @@ class Court:
             
     #this method is for the 'second' mechanic; a second (which represents the unit of time) is a bundle of turns by the players
     #this method executes those turns
-    def game_second(self, ball, sequence, shot_clock, time, threshold=3.0):
+    def game_second(self, ball, sequence, shot_clock, time, threshold=1.0):
         if ball.possession == False:
             for x in range(2):
                 self.loose_ball_chase(ball)

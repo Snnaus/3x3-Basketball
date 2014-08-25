@@ -125,10 +125,10 @@ class Player():
     technique = 10
     
     #offensive skills
-    layup = 10
+    layup = 0
     dunk = False
-    jump_shooting = 10
-    three_modifier = 0
+    jump_shooting = 5
+    three_modifier = 10
     ball_handle = 10
     passing = 10
     shooting_traffic = 10
@@ -256,7 +256,7 @@ class Player():
         exv = 0
         for x in prox:
             if x == '1':
-                openness -= 10
+                openness += 10
         openness = openness - (self.shooting_traffic + self.height)
         if openness < 0:
             openness = 0
@@ -267,7 +267,7 @@ class Player():
         elif self.distance_from_basket() < 6:
             exv = self.jump_shooting*3 - openness
         else:
-            exv = self.jump_shooting + self.three_modifier/4 - openness
+            exv = self.jump_shooting + self.three_modifier - openness
         return exv
         
     #this is the offensive brain of the player; here is were the sense keys are generated, used to come up with a decision, and then sent to the controller; 
@@ -485,7 +485,6 @@ class Player():
         tippers = court.players_between(ball, target.court_position, self.court_position)
         tipped = False
         defender = 0
-        ball.possession = False
         for k,v in tippers.iteritems():
             if self.team_id != court.players[v].team_id:
                 tipped = court.players[v].tip_pass()
@@ -548,7 +547,7 @@ class Player():
                 shot_fate = random.randint(1,100)
                 self.game_stats['FGA'] += 1
                 if shot_fate <= 20 + layup_percent*3 - true_modifier:
-                    print 'Layup made'
+                    #print 'Layup made'
                     court.points_last = 1
                     court.scorer = self.player_id
                     self.game_stats['FG'] += 1
@@ -562,7 +561,7 @@ class Player():
                     shot_fate = random.randint(1,100)
                     self.game_stats['FGA'] += 1
                     if shot_fate <= self.jump_shooting*3 - court_modifier - true_modifier:
-                        print "Jump Shot made"
+                        #print "Jump Shot made"
                         court.points_last = 1
                         court.scorer = self.player_id
                         self.game_stats['FG'] += 1
@@ -573,8 +572,8 @@ class Player():
                     court_modifier += (7 * (distance_from_basket - 7))
                     shot_fate = random.randint(1,100)
                     self.game_stats['2PA'] += 1
-                    if shot_fate <= self.jump_shooting/2 + self.three_modifier - court_modifier - true_modifier:
-                        print "Made the Three"
+                    if shot_fate <= self.jump_shooting + self.three_modifier - court_modifier - true_modifier:
+                        #print "Made the Three"
                         court.points_last = 2
                         court.scorer = self.player_id
                         self.game_stats['2P'] += 1

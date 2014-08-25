@@ -34,7 +34,7 @@ class Ball:
     #this is to tell the game that the ball_handler has picked up his dribble, which means he can no longer move-only pass, shoot, or wait.
     picked_up_dribble = False
     
-    shot_att = True
+    shot_att = False
 
     #this function is to determine the destination of the ball on a bounce; it takes the distance of the shot taken and gives it a random distance to go;
     #it should give the ball a random slope and random 'power' and then multiple that and add it to the position of the basket to get the position of the ball; The ball should
