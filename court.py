@@ -337,7 +337,7 @@ class Court:
             if the_num < 1000 and v.team_id != shooter.team_id and self.freethrow == False:
                 the_num += v.block_check(shooter, self)
         
-        the_num = the_num - (shooter.shooting_traffic + shooter.height)
+        the_num = the_num - (random.randint(1,shooter.shooting_traffic) + shooter.height)
         return the_num
         
         
@@ -415,7 +415,7 @@ class Court:
                 defense = self.defense_pairs[id]
                 new_position = {}
                 for defender,offense in defense.iteritems():
-                    self.players[defender].court_position = self.players[defender].on_ball_destination(self.players[offense],True)
+                    self.players[defender].court_position = self.players[defender].on_ball_destination(self.players[offense], False)
      
         self.update_player_pos()
         sequence.append(self.tk_frame(ball))
@@ -466,9 +466,9 @@ class Court:
         self.update_player_pos()
         sequence.append(self.tk_frame(ball))
         
-        if self.points_last == 0 and self.ft_count == 1 and ball.shot_att == True:
+        if self.points_last == 0 and self.ft_count == 1 and ball.shot_att == True and shooter.game_stats['FGA'] != 0:
             shooter.game_stats['FGA'] -= 1
-        elif self.points_last == 0 and ball.shot_att == True:
+        elif self.points_last == 0 and ball.shot_att == True and shooter.game_stats['2PA'] != 0:
             shooter.game_stats['2PA'] -= 1
         
         for x in range(self.ft_count):

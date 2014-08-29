@@ -97,6 +97,7 @@ class Player():
             'FTA': 0,
             'ORB': 0,
             'DRB': 0,
+            'TRB': 0,
             'AST': 0,
             'STL': 0,
             'BLK': 0,
@@ -120,12 +121,12 @@ class Player():
     jump = 10
     stamina = 10
     strength = 10
-    rebound = 10
+    rebound = 5
     hands = 10
     technique = 10
     
     #offensive skills
-    layup = 0
+    layup = 10
     dunk = False
     jump_shooting = 5
     three_modifier = 10
@@ -367,8 +368,12 @@ class Player():
             key = event[1]
             new = [0,0]
             if event[0] == 'shoot':
+                old_points = court.points_last
+                if court.points_last == 2:
+                    court.points_last = 1.25
                 new[0], new[1] = self.shoot_dict[key][0] + court.points_last, self.shoot_dict[key][1] + 1
                 self.shoot_dict[key] = (int(new[0]),int(new[1]))
+                court.points_last = old_points
             elif event[0] == 'defense':
                 new[0], new[1] = self.defense_dict[key][event[2]][0] + court.points_last, self.defense_dict[key][event[2]][1] + 1
                 self.defense_dict[key][event[2]] = (int(new[0]),int(new[1]))
@@ -567,7 +572,7 @@ class Player():
                         self.game_stats['FG'] += 1
                         self.game_stats['PTS'] += 1
                     else:
-                        ball.rebound(court, distance_from_basket)
+                        ball.rebound(court, distance_from_basket/2)
                 else:
                     court_modifier += (7 * (distance_from_basket - 7))
                     shot_fate = random.randint(1,100)
@@ -579,7 +584,7 @@ class Player():
                         self.game_stats['2P'] += 1
                         self.game_stats['PTS'] += 2
                     else:
-                        ball.rebound(court, distance_from_basket)
+                        ball.rebound(court, distance_from_basket/2)
                         
     #This function is to calculate the defensive_modifier against the player
     #that this player is defending; returns the defense_modifier
@@ -596,10 +601,10 @@ class Player():
                 court.freethrow = opponent.player_id
             elif fate <= 20 - self.technique + opponent.technique and self.distance_from_basket() < 3:
                 court.freethrow = opponent.player_id
-        '''elif distance < 3:
+        elif distance < 3:
             defense_modifier = (self.height + random.randint(0,self.jump))/2
             if fate <= 5 - self.technique + opponent.technique and opponent.distance_from_basket() < 3:
-                court.freethrow = opponent.player_id'''
+                court.freethrow = opponent.player_id
         
         if court.freethrow != False:
             if opponent.distance_from_basket() >= 6:
@@ -663,7 +668,7 @@ class Player():
         
         #this will take the difference between the two modifiers and if it is greater
         #than 20 - block, it will be a block
-        if true_modifier - (opponent.shooting_traffic + opponent.height) >= 25 - self.block:
+        if true_modifier - (random.randint(1,opponent.shooting_traffic) + opponent.height) >= 20 - self.block:
             #this is to insure that the shot is missed; the shot function needs
             #to be used because a block is a missed shot, so it needs to count
             #as such
@@ -707,7 +712,7 @@ class Player():
     #the strength attributes would be used to make the opponents rebound; the number
     #returned will be compared to the opponents number in an outside rebound function
     def rebound_jump(self, rb_modifier=0):
-        x = self.height+self.rebound+random.randint(0,self.jump)-rb_modifier
+        x = self.height+self.rebound*2+random.randint(0,self.jump)-rb_modifier
         if x < 0:
             x = 0
         return x

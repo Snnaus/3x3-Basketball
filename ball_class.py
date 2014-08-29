@@ -35,6 +35,7 @@ class Ball:
     picked_up_dribble = False
     
     shot_att = False
+    
 
     #this function is to determine the destination of the ball on a bounce; it takes the distance of the shot taken and gives it a random distance to go;
     #it should give the ball a random slope and random 'power' and then multiple that and add it to the position of the basket to get the position of the ball; The ball should
@@ -111,7 +112,7 @@ class Ball:
             return False
             
     def box_out_range(self):
-        if self.court_position[0] >= 3 and self.court_position[0] <= 11:
+        if self.court_position[0] >= 2 and self.court_position[0] <= 12:
             if self.court_position[1] >= 0 and self.court_position[1] <= 5:
                 return True
             else:
@@ -128,6 +129,23 @@ class Ball:
         self.is_rebound = True
         self.possession = False
         rebounders = court.players_between(self, self.court_position, [7,1])
+        test_pos = [self.court_position[0], self.court_position[1]]
+        if len(rebounders) == 0:
+            test_pos[0] += 1
+            rebounders = court.players_between(self, test_pos, [7,1])
+            test_pos[0] -= 1
+        if len(rebounders) == 0:
+            test_pos[0] -= 1
+            rebounders = court.players_between(self, test_pos, [7,1])
+            test_pos[0] += 1
+        if len(rebounders) == 0:
+            test_pos[1] -= 1
+            rebounders = court.players_between(self, test_pos, [7,1])
+            test_pos[1] += 1
+        if len(rebounders) == 0:
+            test_pos[1] += 1
+            rebounders = court.players_between(self, test_pos, [7,1])
+            test_pos[1] -= 1
         
         if self.box_out_range() == True and len(rebounders) > 0:
             #this is the external rebound function found in player.py file
@@ -145,6 +163,7 @@ class Ball:
                     court.players[self.last_touch].game_stats['STL'] += 1
                     self.is_steal = False
             elif self.is_rebound == True:
+                new_player.game_stats['TRB'] += 1
                 if old_player.team_id == new_player.team_id:
                     new_player.game_stats['ORB'] += 1
                 else:
@@ -165,7 +184,7 @@ class Ball:
     #this method is to adjust the turnt_over attribute after a turnover
     def tuurnt_over(self, new_player, rebound, court):
             if new_player.team_id != court.players[self.last_possession].team_id or rebound == True and new_player.team_id != court.players[self.last_possession].team_id:
-                turnt_over = True
+                self.turnt_over = True
                 for id,player in court.players.iteritems():
                     if player.team_id == new_player.team_id:
                         player.on_defense = False
